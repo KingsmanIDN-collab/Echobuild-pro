@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -16,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Helper Function untuk Encode Gambar ke Base64
+# Helper Function untuk Encode Gambar ke Base64 (Untuk CSS Adaptif)
 def get_image_base64(fname):
     if not fname or not os.path.exists(fname):
         return None
@@ -139,7 +138,7 @@ CARBON_FACTORS = {
 }
 
 # ==========================================
-# 3. SIDEBAR NAVIGASI & REAL-TIME LOGO SWITCHER
+# 3. SIDEBAR NAVIGASI & LOGO SWITCHER FIX
 # ==========================================
 def navigate_to(page_name):
     st.session_state["nav_menu"] = page_name
@@ -147,7 +146,7 @@ def navigate_to(page_name):
 if "nav_menu" not in st.session_state:
     st.session_state["nav_menu"] = "🏠 Beranda"
 
-# Deteksi File Logo Light dan Dark (.png / .jpg)
+# Deteksi File Logo Light dan Dark
 logo_light_path = get_existing_image(["logo_light.png", "logo_light.jpg", "logo_light.jpeg", "logo_light.avif"])
 logo_dark_path = get_existing_image(["logo_dark.png", "logo_dark.jpg", "logo_dark.jpeg", "logo_dark.avif"])
 
@@ -155,69 +154,45 @@ logo_light_b64 = get_image_base64(logo_light_path)
 logo_dark_b64 = get_image_base64(logo_dark_path)
 
 if logo_light_b64 and logo_dark_b64:
-    # Render HTML Container untuk Logo Light & Dark
     st.sidebar.markdown(f"""
         <style>
-        .sidebar-logo-container {{
+        .sidebar-logo-wrapper {{
             text-align: left;
             margin-bottom: 15px;
-            display: flex;
-            justify-content: flex-start;
         }}
-        .sidebar-logo-light, .sidebar-logo-dark {{
+        .logo-img-light {{
+            display: block;
             width: 170px;
             height: auto;
             border-radius: 10px;
         }}
+        .logo-img-dark {{
+            display: none;
+            width: 170px;
+            height: auto;
+            border-radius: 10px;
+        }}
+
+        /* Switcher Otomatis saat Streamlit Mengaktifkan Dark Mode */
+        [data-theme="dark"] .logo-img-light,
+        .stApp[data-theme="dark"] .logo-img-light {{
+            display: none !important;
+        }}
+        [data-theme="dark"] .logo-img-dark,
+        .stApp[data-theme="dark"] .logo-img-dark {{
+            display: block !important;
+        }}
         </style>
-        <div class="sidebar-logo-container">
-            <img src="{logo_light_b64}" class="sidebar-logo-light" id="sidebar-logo-light" alt="Logo Kingsman Light" />
-            <img src="{logo_dark_b64}" class="sidebar-logo-dark" id="sidebar-logo-dark" alt="Logo Kingsman Dark" style="display: none;" />
+
+        <div class="sidebar-logo-wrapper">
+            <img src="{logo_light_b64}" class="logo-img-light" alt="Logo Kingsman Light" />
+            <img src="{logo_dark_b64}" class="logo-img-dark" alt="Logo Kingsman Dark" />
         </div>
     """, unsafe_allow_html=True)
-
-    # Detektor Warna Background Sidebar Real-time (JavaScript Observer)
-    components.html("""
-        <script>
-        const pDoc = window.parent.document;
-        function updateLogoVisibility() {
-            const sidebar = pDoc.querySelector('section[data-testid="stSidebar"]');
-            const lightImg = pDoc.getElementById('sidebar-logo-light');
-            const darkImg = pDoc.getElementById('sidebar-logo-dark');
-            
-            if (sidebar && lightImg && darkImg) {
-                const style = window.parent.getComputedStyle(sidebar);
-                const bg = style.backgroundColor;
-                const match = bg.match(/\d+/g);
-                if (match && match.length >= 3) {
-                    const r = parseInt(match[0]);
-                    const g = parseInt(match[1]);
-                    const b = parseInt(match[2]);
-                    // Hitung kecerahan warna background (Luma Formula)
-                    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-                    
-                    if (brightness < 128) { // Background Gelap (Dark Mode)
-                        lightImg.style.display = 'none';
-                        darkImg.style.display = 'block';
-                    } else { // Background Terang (Light Mode)
-                        lightImg.style.display = 'block';
-                        darkImg.style.display = 'none';
-                    }
-                }
-            }
-        }
-        
-        // Jalankan pemeriksaan awal dan daftarkan observer perubahan tema
-        setTimeout(updateLogoVisibility, 100);
-        setInterval(updateLogoVisibility, 400);
-        const observer = new MutationObserver(updateLogoVisibility);
-        observer.observe(pDoc.body, { attributes: true, childList: true, subtree: true });
-        </script>
-    """, height=0, width=0)
-else:
-    single_logo = get_existing_image(["logo_kingsman.jpg", "logo_kingsman.png", "logo.jpg"])
-    if single_logo:
-        st.sidebar.image(single_logo, width=170)
+elif logo_light_path:
+    st.sidebar.image(logo_light_path, width=170)
+elif logo_dark_path:
+    st.sidebar.image(logo_dark_path, width=170)
 
 st.sidebar.title("EcoBuild Pro v2.0")
 st.sidebar.caption("Civil Carbon & Cost Intelligence Platform")

@@ -138,7 +138,7 @@ CARBON_FACTORS = {
 }
 
 # ==========================================
-# 3. SIDEBAR NAVIGASI & ADAPTIVE LOGO SWITCHER
+# 3. SIDEBAR NAVIGASI & DUAL-THEME LOGO SWITCHER
 # ==========================================
 def navigate_to(page_name):
     st.session_state["nav_menu"] = page_name
@@ -154,7 +154,7 @@ logo_light_b64 = get_image_base64(logo_light_path)
 logo_dark_b64 = get_image_base64(logo_dark_path)
 
 if logo_light_b64 and logo_dark_b64:
-    # Render HTML/CSS Switcher Logo Otomatis (Rata Kiri, Lebar 170px)
+    # Switcher Logo Otomatis (Sinkron dengan OS & Menu Toggle Streamlit Settings)
     st.sidebar.markdown(f"""
         <style>
         .sidebar-logo-container {{
@@ -176,10 +176,33 @@ if logo_light_b64 and logo_dark_b64:
             border-radius: 10px;
         }}
         
-        /* Deteksi Tema Gelap Sesuai Sistem / Browser */
+        /* 1. Deteksi Mode Gelap dari Sistem / Browser */
         @media (prefers-color-scheme: dark) {{
             .sidebar-logo-light {{ display: none !important; }}
             .sidebar-logo-dark {{ display: block !important; }}
+        }}
+        
+        /* 2. Deteksi Toggle Tema Manual dari Streamlit */
+        [data-theme="dark"] .sidebar-logo-light,
+        html[data-theme="dark"] .sidebar-logo-light,
+        .stApp[data-theme="dark"] .sidebar-logo-light {{
+            display: none !important;
+        }}
+        [data-theme="dark"] .sidebar-logo-dark,
+        html[data-theme="dark"] .sidebar-logo-dark,
+        .stApp[data-theme="dark"] .sidebar-logo-dark {{
+            display: block !important;
+        }}
+
+        [data-theme="light"] .sidebar-logo-light,
+        html[data-theme="light"] .sidebar-logo-light,
+        .stApp[data-theme="light"] .sidebar-logo-light {{
+            display: block !important;
+        }}
+        [data-theme="light"] .sidebar-logo-dark,
+        html[data-theme="light"] .sidebar-logo-dark,
+        .stApp[data-theme="light"] .sidebar-logo-dark {{
+            display: none !important;
         }}
         </style>
         <div class="sidebar-logo-container">

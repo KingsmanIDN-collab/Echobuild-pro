@@ -6,7 +6,7 @@ import os
 import base64
 
 # ==========================================
-# 1. KONFIGURASI HALAMAN
+# 1. KONFIGURASI HALAMAN & ADAPTIVE CSS
 # ==========================================
 st.set_page_config(
     page_title="EcoBuild Pro - Civil Carbon & Cost Intelligence",
@@ -38,7 +38,7 @@ def get_existing_image(filename_list):
             return fname
     return None
 
-# Cari File Gambar Background Green Building (.avif / .jpg / dll)
+# Cari File Gambar Background Green Building
 bg_file = get_existing_image([
     "bg_green_building.avif", 
     "bg_green_building.jpg", 
@@ -47,11 +47,10 @@ bg_file = get_existing_image([
 ])
 
 bg_base64_url = get_image_base64(bg_file)
-# Fallback jika gambar lokal tidak ditemukan
 if not bg_base64_url:
     bg_base64_url = "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=1200"
 
-# Custom CSS Styling Professional
+# Custom CSS Styling (Adaptif Light & Dark Mode)
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -63,20 +62,20 @@ st.markdown(f"""
     /* Hero Banner Background Styling */
     .hero-container {{
         position: relative;
-        background: linear-gradient(135deg, rgba(15, 32, 39, 0.85), rgba(32, 58, 67, 0.82)), 
+        background: linear-gradient(135deg, rgba(15, 32, 39, 0.88), rgba(32, 58, 67, 0.85)), 
                     url('{bg_base64_url}');
         background-size: cover;
         background-position: center;
-        padding: 55px 30px;
+        padding: 50px 30px;
         border-radius: 20px;
-        color: white;
+        color: #ffffff !important;
         text-align: center;
         margin-bottom: 30px;
         box-shadow: 0 10px 25px rgba(0,0,0,0.15);
     }}
     .hero-badge {{
         background-color: rgba(46, 125, 50, 0.9);
-        color: #ffffff;
+        color: #ffffff !important;
         padding: 6px 18px;
         border-radius: 30px;
         font-size: 0.85rem;
@@ -87,24 +86,35 @@ st.markdown(f"""
         margin-bottom: 14px;
     }}
     .hero-title {{
-        font-size: 2.6rem;
+        font-size: 2.5rem;
         font-weight: 800;
         margin-bottom: 12px;
         letter-spacing: -0.5px;
+        color: #ffffff !important;
     }}
     .hero-subtitle {{
-        font-size: 1.1rem;
+        font-size: 1.05rem;
         opacity: 0.92;
         max-width: 850px;
         margin: 0 auto;
         font-weight: 400;
         line-height: 1.6;
+        color: #ffffff !important;
     }}
 
-    /* Sidebar Accent */
+    /* Sidebar Adaptif Tema (Light & Dark Mode) */
     section[data-testid="stSidebar"] {{
-        background-color: #f8fafc;
-        border-right: 1px solid #e2e8f0;
+        border-right: 1px solid rgba(128, 128, 128, 0.2);
+    }}
+
+    /* Kartu & Box Mengikuti Tema */
+    .custom-card {{
+        background: var(--secondary-background-color);
+        border: 1px solid rgba(128, 128, 128, 0.2);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+        margin-bottom: 20px;
     }}
     </style>
 """, unsafe_allow_html=True)
@@ -128,8 +138,12 @@ CARBON_FACTORS = {
 }
 
 # ==========================================
-# 3. SIDEBAR NAVIGASI MENU
+# 3. SIDEBAR NAVIGASI MENU (SESSIOIN STATE)
 # ==========================================
+# Inisialisasi Session State Navigasi
+if "nav_menu" not in st.session_state:
+    st.session_state["nav_menu"] = "🏠 Beranda"
+
 st.sidebar.image("https://cdn-icons-png.flaticon.com/512/4300/4300058.png", width=60)
 st.sidebar.title("EcoBuild Pro v2.0")
 st.sidebar.caption("Civil Carbon & Cost Intelligence Platform")
@@ -137,14 +151,15 @@ st.sidebar.markdown("---")
 
 menu = st.sidebar.radio(
     "Pilih Menu Utama:",
-    ["🏠 Beranda", "🧮 Kalkulator & Analisis Proyek", "⚖️ Simulasi Komparasi Desain", "📚 Siklus Hidup Emisi & Solusi"]
+    ["🏠 Beranda", "🧮 Kalkulator & Analisis Proyek", "⚖️ Simulasi Komparasi Desain", "📚 Siklus Hidup Emisi & Solusi"],
+    key="nav_menu"
 )
 
 # ==========================================
 # MENU 1: BERANDA
 # ==========================================
 if menu == "🏠 Beranda":
-    # Hero Section dengan Gambar Background Gedung Hijau
+    # Hero Section
     st.markdown("""
         <div class="hero-container">
             <div class="hero-badge">Green Building & Civil Engineering Intelligence</div>
@@ -153,7 +168,7 @@ if menu == "🏠 Beranda":
         </div>
     """, unsafe_allow_html=True)
 
-    # Section Latar Belakang & Urgensi Iklim (Layout 2 Kolom Kompakt)
+    # Section Latar Belakang & Urgensi Iklim (Layout 2 Kolom)
     st.subheader("🌐 Latar Belakang & Urgensi Sektor Konstruksi")
     
     col_bg1, col_bg2 = st.columns([1.1, 0.9])
@@ -196,16 +211,32 @@ if menu == "🏠 Beranda":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Grid Card Fitur
+    # Grid Card Fitur Interaktif dengan Tombol Navigasi
     col1, col2, col3, col4 = st.columns(4)
+    
     with col1:
         st.info("### 📦 Material Carbon\nHitung jejak karbon dari berbagai jenis material struktur.")
+        if st.button("Buka Kalkulator ➔", key="btn_nav_mat", use_container_width=True):
+            st.session_state["nav_menu"] = "🧮 Kalkulator & Analisis Proyek"
+            st.rerun()
+
     with col2:
         st.warning("### 🚛 Logistik & Alat\nIntegrasi emisi pengangkutan truk & BBM solar alat berat.")
+        if st.button("Hitung Logistik ➔", key="btn_nav_log", use_container_width=True):
+            st.session_state["nav_menu"] = "🧮 Kalkulator & Analisis Proyek"
+            st.rerun()
+
     with col3:
         st.success("### ⚖️ Komparasi Skenario\nBandingkan Desain Konvensional vs Green Design secara instan.")
+        if st.button("Mulai Komparasi ➔", key="btn_nav_komp", use_container_width=True):
+            st.session_state["nav_menu"] = "⚖️ Simulasi Komparasi Desain"
+            st.rerun()
+
     with col4:
-        st.error("### 📄 Ekspor Laporan\nUnduh rekapitulasi data ke format CSV untuk lampiran tugas.")
+        st.error("### 📚 Siklus Hidup & LCA\nPelajari modul tahap emisi A1-D dan strategi teknisnya.")
+        if st.button("Pelajari LCA ➔", key="btn_nav_lca", use_container_width=True):
+            st.session_state["nav_menu"] = "📚 Siklus Hidup Emisi & Solusi"
+            st.rerun()
 
 # ==========================================
 # MENU 2: KALKULATOR & ANALISIS PROYEK

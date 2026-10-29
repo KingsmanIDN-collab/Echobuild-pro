@@ -138,7 +138,7 @@ CARBON_FACTORS = {
 }
 
 # ==========================================
-# 3. SIDEBAR NAVIGASI & ADAPTIVE LOGO SWITCHER
+# 3. SIDEBAR NAVIGASI & ADAPTIVE LOGO SWITCHER (UKURAN KOMPAKT)
 # ==========================================
 def navigate_to(page_name):
     st.session_state["nav_menu"] = page_name
@@ -154,22 +154,26 @@ logo_light_b64 = get_image_base64(logo_light_path)
 logo_dark_b64 = get_image_base64(logo_dark_path)
 
 if logo_light_b64 and logo_dark_b64:
-    # Render HTML/CSS Switcher Logo Otomatis Sesuai Mode
+    # Render HTML/CSS Switcher Logo Otomatis (Ukuran Diperkecil ke 130px)
     st.sidebar.markdown(f"""
         <style>
         .sidebar-logo-container {{
             text-align: center;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
         }}
         .sidebar-logo-light {{
             display: block;
-            width: 100%;
-            border-radius: 12px;
+            width: 130px;
+            height: auto;
+            border-radius: 10px;
         }}
         .sidebar-logo-dark {{
             display: none;
-            width: 100%;
-            border-radius: 12px;
+            width: 130px;
+            height: auto;
+            border-radius: 10px;
         }}
         
         /* Deteksi Tema Gelap Sesuai Sistem / Browser */
@@ -184,10 +188,10 @@ if logo_light_b64 and logo_dark_b64:
         </div>
     """, unsafe_allow_html=True)
 else:
-    # Fallback jika hanya ada 1 gambar logo tunggal
+    # Fallback jika hanya ada 1 gambar logo
     single_logo = get_existing_image(["logo_kingsman.jpg", "logo_kingsman.png", "logo.jpg"])
     if single_logo:
-        st.sidebar.image(single_logo, use_container_width=True)
+        st.sidebar.image(single_logo, width=130)
     else:
         st.sidebar.image("https://cdn-icons-png.flaticon.com/512/4300/4300058.png", width=60)
 

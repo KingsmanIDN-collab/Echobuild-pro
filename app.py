@@ -138,9 +138,12 @@ CARBON_FACTORS = {
 }
 
 # ==========================================
-# 3. SIDEBAR NAVIGASI MENU (SESSIOIN STATE)
+# 3. SIDEBAR NAVIGASI MENU (CALLBACK FIX)
 # ==========================================
-# Inisialisasi Session State Navigasi
+# Callback untuk Pindah Halaman Tanpa Error
+def navigate_to(page_name):
+    st.session_state["nav_menu"] = page_name
+
 if "nav_menu" not in st.session_state:
     st.session_state["nav_menu"] = "🏠 Beranda"
 
@@ -211,32 +214,24 @@ if menu == "🏠 Beranda":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Grid Card Fitur Interaktif dengan Tombol Navigasi
+    # Grid Card Fitur Interaktif dengan Tombol Navigasi Aman
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.info("### 📦 Material Carbon\nHitung jejak karbon dari berbagai jenis material struktur.")
-        if st.button("Buka Kalkulator ➔", key="btn_nav_mat", use_container_width=True):
-            st.session_state["nav_menu"] = "🧮 Kalkulator & Analisis Proyek"
-            st.rerun()
+        st.button("Buka Kalkulator ➔", key="btn_nav_mat", use_container_width=True, on_click=navigate_to, args=("🧮 Kalkulator & Analisis Proyek",))
 
     with col2:
         st.warning("### 🚛 Logistik & Alat\nIntegrasi emisi pengangkutan truk & BBM solar alat berat.")
-        if st.button("Hitung Logistik ➔", key="btn_nav_log", use_container_width=True):
-            st.session_state["nav_menu"] = "🧮 Kalkulator & Analisis Proyek"
-            st.rerun()
+        st.button("Hitung Logistik ➔", key="btn_nav_log", use_container_width=True, on_click=navigate_to, args=("🧮 Kalkulator & Analisis Proyek",))
 
     with col3:
         st.success("### ⚖️ Komparasi Skenario\nBandingkan Desain Konvensional vs Green Design secara instan.")
-        if st.button("Mulai Komparasi ➔", key="btn_nav_komp", use_container_width=True):
-            st.session_state["nav_menu"] = "⚖️ Simulasi Komparasi Desain"
-            st.rerun()
+        st.button("Mulai Komparasi ➔", key="btn_nav_komp", use_container_width=True, on_click=navigate_to, args=("⚖️ Simulasi Komparasi Desain",))
 
     with col4:
         st.error("### 📚 Siklus Hidup & LCA\nPelajari modul tahap emisi A1-D dan strategi teknisnya.")
-        if st.button("Pelajari LCA ➔", key="btn_nav_lca", use_container_width=True):
-            st.session_state["nav_menu"] = "📚 Siklus Hidup Emisi & Solusi"
-            st.rerun()
+        st.button("Pelajari LCA ➔", key="btn_nav_lca", use_container_width=True, on_click=navigate_to, args=("📚 Siklus Hidup Emisi & Solusi",))
 
 # ==========================================
 # MENU 2: KALKULATOR & ANALISIS PROYEK

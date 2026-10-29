@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Helper Function untuk Encode Gambar ke Base64 (Untuk CSS Background)
+# Helper Function untuk Encode Gambar ke Base64 (Untuk CSS Adaptif)
 def get_image_base64(fname):
     if not fname or not os.path.exists(fname):
         return None
@@ -138,16 +138,59 @@ CARBON_FACTORS = {
 }
 
 # ==========================================
-# 3. SIDEBAR NAVIGASI MENU (CALLBACK FIX)
+# 3. SIDEBAR NAVIGASI & ADAPTIVE LOGO SWITCHER
 # ==========================================
-# Callback untuk Pindah Halaman Tanpa Error
 def navigate_to(page_name):
     st.session_state["nav_menu"] = page_name
 
 if "nav_menu" not in st.session_state:
     st.session_state["nav_menu"] = "🏠 Beranda"
 
-st.sidebar.image("https://cdn-icons-png.flaticon.com/512/4300/4300058.png", width=60)
+# Cari Logo Light & Dark Mode
+logo_light_path = get_existing_image(["logo_light.jpg", "logo_light.png", "logo_light.jpeg", "logo_light.avif"])
+logo_dark_path = get_existing_image(["logo_dark.jpg", "logo_dark.png", "logo_dark.jpeg", "logo_dark.avif"])
+
+logo_light_b64 = get_image_base64(logo_light_path)
+logo_dark_b64 = get_image_base64(logo_dark_path)
+
+if logo_light_b64 and logo_dark_b64:
+    # Render HTML/CSS Switcher Logo Otomatis Sesuai Mode
+    st.sidebar.markdown(f"""
+        <style>
+        .sidebar-logo-container {{
+            text-align: center;
+            margin-bottom: 12px;
+        }}
+        .sidebar-logo-light {{
+            display: block;
+            width: 100%;
+            border-radius: 12px;
+        }}
+        .sidebar-logo-dark {{
+            display: none;
+            width: 100%;
+            border-radius: 12px;
+        }}
+        
+        /* Deteksi Tema Gelap Sesuai Sistem / Browser */
+        @media (prefers-color-scheme: dark) {{
+            .sidebar-logo-light {{ display: none !important; }}
+            .sidebar-logo-dark {{ display: block !important; }}
+        }}
+        </style>
+        <div class="sidebar-logo-container">
+            <img src="{logo_light_b64}" class="sidebar-logo-light" alt="Logo Kingsman Light" />
+            <img src="{logo_dark_b64}" class="sidebar-logo-dark" alt="Logo Kingsman Dark" />
+        </div>
+    """, unsafe_allow_html=True)
+else:
+    # Fallback jika hanya ada 1 gambar logo tunggal
+    single_logo = get_existing_image(["logo_kingsman.jpg", "logo_kingsman.png", "logo.jpg"])
+    if single_logo:
+        st.sidebar.image(single_logo, use_container_width=True)
+    else:
+        st.sidebar.image("https://cdn-icons-png.flaticon.com/512/4300/4300058.png", width=60)
+
 st.sidebar.title("EcoBuild Pro v2.0")
 st.sidebar.caption("Civil Carbon & Cost Intelligence Platform")
 st.sidebar.markdown("---")
@@ -214,7 +257,7 @@ if menu == "🏠 Beranda":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Grid Card Fitur Interaktif dengan Tombol Navigasi Aman
+    # Grid Card Fitur Interaktif dengan Tombol Navigasi
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:

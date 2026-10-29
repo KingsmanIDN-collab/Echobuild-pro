@@ -138,7 +138,7 @@ CARBON_FACTORS = {
 }
 
 # ==========================================
-# 3. SIDEBAR NAVIGASI & ADAPTIVE LOGO SWITCHER (UKURAN KOMPAKT)
+# 3. SIDEBAR NAVIGASI & ADAPTIVE LOGO SWITCHER
 # ==========================================
 def navigate_to(page_name):
     st.session_state["nav_menu"] = page_name
@@ -154,24 +154,24 @@ logo_light_b64 = get_image_base64(logo_light_path)
 logo_dark_b64 = get_image_base64(logo_dark_path)
 
 if logo_light_b64 and logo_dark_b64:
-    # Render HTML/CSS Switcher Logo Otomatis (Ukuran Diperkecil ke 130px)
+    # Render HTML/CSS Switcher Logo Otomatis (Rata Kiri, Lebar 170px)
     st.sidebar.markdown(f"""
         <style>
         .sidebar-logo-container {{
-            text-align: center;
+            text-align: left;
             margin-bottom: 15px;
             display: flex;
-            justify-content: center;
+            justify-content: flex-start;
         }}
         .sidebar-logo-light {{
             display: block;
-            width: 130px;
+            width: 170px;
             height: auto;
             border-radius: 10px;
         }}
         .sidebar-logo-dark {{
             display: none;
-            width: 130px;
+            width: 170px;
             height: auto;
             border-radius: 10px;
         }}
@@ -191,7 +191,7 @@ else:
     # Fallback jika hanya ada 1 gambar logo
     single_logo = get_existing_image(["logo_kingsman.jpg", "logo_kingsman.png", "logo.jpg"])
     if single_logo:
-        st.sidebar.image(single_logo, width=130)
+        st.sidebar.image(single_logo, width=170)
     else:
         st.sidebar.image("https://cdn-icons-png.flaticon.com/512/4300/4300058.png", width=60)
 
@@ -204,6 +204,21 @@ menu = st.sidebar.radio(
     ["🏠 Beranda", "🧮 Kalkulator & Analisis Proyek", "⚖️ Simulasi Komparasi Desain", "📚 Siklus Hidup Emisi & Solusi"],
     key="nav_menu"
 )
+
+# --- BLOK DOSEN PENGAMPU (SUPPORT DUAL THEME) ---
+st.sidebar.markdown("---")
+st.sidebar.markdown("""
+    <div style="
+        background: var(--secondary-background-color);
+        padding: 14px 16px;
+        border-radius: 12px;
+        border: 1px solid rgba(128, 128, 128, 0.2);
+        margin-top: 10px;
+    ">
+        <span style="font-size: 0.78rem; font-weight: 700; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px;">👨‍🏫 Dosen Pengampu</span><br>
+        <span style="font-size: 0.95rem; font-weight: 700; display: inline-block; margin-top: 4px;">Dr. Ir. Dedy Firmansyah, S.Pd., M.T.</span>
+    </div>
+""", unsafe_allow_html=True)
 
 # ==========================================
 # MENU 1: BERANDA

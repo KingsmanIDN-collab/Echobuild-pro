@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Helper Function untuk Encode Gambar ke Base64 (Untuk CSS Adaptif)
+# Helper Function untuk Encode Gambar ke Base64 (Untuk CSS Background)
 def get_image_base64(fname):
     if not fname or not os.path.exists(fname):
         return None
@@ -138,7 +138,7 @@ CARBON_FACTORS = {
 }
 
 # ==========================================
-# 3. SIDEBAR NAVIGASI & LOGO SWITCHER FIX
+# 3. SIDEBAR NAVIGASI & SINGLE LOGO DISPLAY
 # ==========================================
 def navigate_to(page_name):
     st.session_state["nav_menu"] = page_name
@@ -146,53 +146,20 @@ def navigate_to(page_name):
 if "nav_menu" not in st.session_state:
     st.session_state["nav_menu"] = "🏠 Beranda"
 
-# Deteksi File Logo Light dan Dark
-logo_light_path = get_existing_image(["logo_light.png", "logo_light.jpg", "logo_light.jpeg", "logo_light.avif"])
-logo_dark_path = get_existing_image(["logo_dark.png", "logo_dark.jpg", "logo_dark.jpeg", "logo_dark.avif"])
+# Cari Logo Tunggal (Universal Dual-Mode)
+logo_path = get_existing_image([
+    "logo_kingsman.png", 
+    "logo_kingsman.jpg", 
+    "logo_kingsman.jpeg", 
+    "logo.png", 
+    "logo.jpg",
+    "logo_dark.png"
+])
 
-logo_light_b64 = get_image_base64(logo_light_path)
-logo_dark_b64 = get_image_base64(logo_dark_path)
-
-if logo_light_b64 and logo_dark_b64:
-    st.sidebar.markdown(f"""
-        <style>
-        .sidebar-logo-wrapper {{
-            text-align: left;
-            margin-bottom: 15px;
-        }}
-        .logo-img-light {{
-            display: block;
-            width: 170px;
-            height: auto;
-            border-radius: 10px;
-        }}
-        .logo-img-dark {{
-            display: none;
-            width: 170px;
-            height: auto;
-            border-radius: 10px;
-        }}
-
-        /* Switcher Otomatis saat Streamlit Mengaktifkan Dark Mode */
-        [data-theme="dark"] .logo-img-light,
-        .stApp[data-theme="dark"] .logo-img-light {{
-            display: none !important;
-        }}
-        [data-theme="dark"] .logo-img-dark,
-        .stApp[data-theme="dark"] .logo-img-dark {{
-            display: block !important;
-        }}
-        </style>
-
-        <div class="sidebar-logo-wrapper">
-            <img src="{logo_light_b64}" class="logo-img-light" alt="Logo Kingsman Light" />
-            <img src="{logo_dark_b64}" class="logo-img-dark" alt="Logo Kingsman Dark" />
-        </div>
-    """, unsafe_allow_html=True)
-elif logo_light_path:
-    st.sidebar.image(logo_light_path, width=170)
-elif logo_dark_path:
-    st.sidebar.image(logo_dark_path, width=170)
+if logo_path:
+    st.sidebar.image(logo_path, width=170)
+else:
+    st.sidebar.image("https://cdn-icons-png.flaticon.com/512/4300/4300058.png", width=60)
 
 st.sidebar.title("EcoBuild Pro v2.0")
 st.sidebar.caption("Civil Carbon & Cost Intelligence Platform")

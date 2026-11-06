@@ -210,7 +210,54 @@ if "fuel_liter" not in st.session_state:
     st.session_state["fuel_liter"] = 100.0
 
 # ==========================================
-# 3. HELPER GENERATOR LAPORAN PDF
+# 3. HELPER SMART PARSER FILE RAB EXCEL/CSV
+# ==========================================
+def smart_parse_rab_file(uploaded_file):
+    def process_df(df_in):
+        df_in.columns = [str(col).strip() for col in df_in.columns]
+        mat_col, qty_col = None, None
+        
+        for col in df_in.columns:
+            c_low = str(col).lower().strip()
+            if c_low in ["material", "nama material", "uraian material", "bahan", "item", "nama bahan"]:
+                mat_col = col
+            elif c_low in ["jumlah", "volume", "qty", "kuantitas", "berat", "jumlah (kg)", "volume (kg)", "kuantitas (kg)"]:
+                qty_col = col
+                
+        if mat_col and qty_col:
+            res_df = pd.DataFrame({
+                "Material": df_in[mat_col].astype(str).str.strip(),
+                "Jumlah": pd.to_numeric(df_in[qty_col], errors='coerce').fillna(0)
+            })
+            res_df = res_df.dropna(subset=["Material"])
+            res_df = res_df[res_df["Jumlah"] > 0]
+            if not res_df.empty:
+                return res_df
+        return None
+
+    try:
+        if uploaded_file.name.endswith(".csv"):
+            df = pd.read_csv(uploaded_file)
+            res = process_df(df)
+            if res is not None:
+                return res, None
+        else:
+            xl = pd.ExcelFile(uploaded_file)
+            for sheet_name in xl.sheet_names:
+                for skip in range(12):
+                    try:
+                        df = xl.parse(sheet_name, skiprows=skip)
+                        res = process_df(df)
+                        if res is not None:
+                            return res, None
+                    except Exception:
+                        continue
+        return None, "Kolom 'Material' dan 'Jumlah' (atau Volume/Qty) tidak ditemukan. Pastikan tabel memiliki nama kolom tersebut."
+    except Exception as e:
+        return None, f"Gagal memproses file: {str(e)}"
+
+# ==========================================
+# 4. HELPER GENERATOR LAPORAN PDF
 # ==========================================
 def generate_pdf_report(df_results, total_emission_ton, total_cost, cost_per_ton, transport_emission_kg, equipment_emission_kg, ice_ver):
     buffer = io.BytesIO()
@@ -281,7 +328,7 @@ def generate_pdf_report(df_results, total_emission_ton, total_cost, cost_per_ton
     return buffer.getvalue()
 
 # ==========================================
-# 4. SIDEBAR NAVIGASI & LOGO
+# 5. SIDEBAR NAVIGASI & LOGO
 # ==========================================
 def navigate_to(page_name):
     st.session_state["nav_menu"] = page_name
@@ -383,28 +430,26 @@ if menu == "🏠 Beranda":
         st.button("Pelajari LCA ➔", key="btn_nav_lca", use_container_width=True, on_click=navigate_to, args=("📚 Siklus Hidup Emisi & Solusi",))
 
 # ==========================================
-# MENU 2: KALKULATOR & ANALISIS PROYEK (MULTI-ITEM DYNAMIC)
+# MENU 2: KALKULATOR & ANALISIS PROYEK
 # ==========================================
 elif menu == "🧮 Kalkulator & Analisis Proyek":
     st.title("🧮 Kalkulator Emisi & Biaya Proyek")
     st.write("Hitung jejak emisi karbon dan estimasi biaya proyek dengan memilih material dari **ICE Database** atau mengisi **Material Kustom** secara fleksibel.")
 
-    with st.expander("💾 Backup / Restorasi Proyek (JSON) & Impor File RAB Excel", expanded=False):
+    with st.expander("💾 Backup / Restorasi Proyek (JSON) & Impor File RAB Excel", expanded=True):
         c_exp1, c_exp2 = st.columns(2)
         
         with c_exp1:
             st.subheader("📥 Impor File RAB (.xlsx / .csv)")
             uploaded_rab = st.file_uploader("Unggah file RAB Excel/CSV (Kolom: Material, Jumlah):", type=["xlsx", "csv"])
             if uploaded_rab is not None:
-                try:
-                    df_rab = pd.read_csv(uploaded_rab) if uploaded_rab.name.endswith(".csv") else pd.read_excel(uploaded_rab)
-                    if "Material" in df_rab.columns and "Jumlah" in df_rab.columns:
-                        st.session_state["calc_rab_data"] = df_rab.to_dict('records')
-                        st.success("✅ Volume material dari RAB berhasil diimpor!")
-                    else:
-                        st.error("File RAB wajib memiliki kolom 'Material' dan 'Jumlah'.")
-                except Exception as e:
-                    st.error(f"Gagal membaca file RAB: {e}")
+                parsed_df, err_msg = smart_parse_rab_file(uploaded_rab)
+                if parsed_df is not None:
+                    st.session_state["calc_rab_data"] = parsed_df.to_dict('records')
+                    st.session_state["calc_num_items"] = len(parsed_df)
+                    st.success(f"✅ Berhasil mengimpor {len(parsed_df)} item material dari file RAB!")
+                else:
+                    st.error(err_msg)
 
         with c_exp2:
             st.subheader("💾 Backup Draft Proyek (JSON)")
@@ -442,24 +487,42 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
     results = []
     total_mat_emission_kg = 0
     total_mat_cost = 0
+    rab_data_imported = st.session_state.get("calc_rab_data", None)
 
     for i in range(num_items):
         st.markdown(f"##### 📌 Item Material #{i+1}")
         c_m1, c_m2, c_m3 = st.columns([2.2, 1.2, 1.2])
         
+        # Pre-fill data if RAB imported
+        imported_item = rab_data_imported[i] if (rab_data_imported and i < len(rab_data_imported)) else None
+        
+        default_sel = 0
+        default_qty = 0.0
+        default_name = f"Material Kustom {i+1}"
+        
+        if imported_item:
+            imp_mat_name = imported_item["Material"]
+            default_qty = float(imported_item["Jumlah"])
+            if imp_mat_name in all_mat_options:
+                default_sel = all_mat_options.index(imp_mat_name)
+            else:
+                default_sel = 0
+                default_name = imp_mat_name
+        else:
+            default_sel = (i + 1) if (i + 1) < len(all_mat_options) else 0
+
         with c_m1:
-            def_idx = (i + 1) if (i + 1) < len(all_mat_options) else 0
             sel_mat = st.selectbox(
                 f"Pilih / Cari Material #{i+1}:",
                 options=all_mat_options,
-                index=def_idx,
+                index=default_sel,
                 key=f"calc_sel_{i}"
             )
 
         if sel_mat == "➕ Material Kustom (Isi Sendiri)":
             c_cust1, c_cust2, c_cust3, c_cust4 = st.columns([1.5, 1, 1, 1])
             with c_cust1:
-                mat_name = st.text_input(f"Nama Material Kustom #{i+1}:", value=f"Material Kustom {i+1}", key=f"c_name_{i}")
+                mat_name = st.text_input(f"Nama Material Kustom #{i+1}:", value=default_name, key=f"c_name_{i}")
             with c_cust2:
                 unit_str = st.text_input(f"Satuan #{i+1}:", value="kg", key=f"c_unit_{i}")
             with c_cust3:
@@ -467,7 +530,7 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
             with c_cust4:
                 price_val = st.number_input(f"Harga Satuan (Rp/{unit_str}):", min_value=0.0, value=10000.0, step=1000.0, key=f"c_price_{i}")
             
-            qty_val = st.number_input(f"Jumlah / Volume ({unit_str}) #{i+1}:", min_value=0.0, value=0.0, step=10.0, key=f"c_qty_{i}")
+            qty_val = st.number_input(f"Jumlah / Volume ({unit_str}) #{i+1}:", min_value=0.0, value=default_qty, step=10.0, key=f"c_qty_{i}")
         else:
             mat_info = df_ice_materials[df_ice_materials["Nama Material"] == sel_mat].iloc[0]
             mat_name = sel_mat
@@ -480,7 +543,7 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
             with c_m3:
                 price_val = st.number_input(f"Harga Satuan (Rp/{unit_str}) #{i+1}:", min_value=0.0, value=15000.0, step=1000.0, key=f"p_val_{i}")
             
-            qty_val = st.number_input(f"Jumlah / Berat ({unit_str}) #{i+1}:", min_value=0.0, value=0.0, step=100.0, key=f"q_val_{i}")
+            qty_val = st.number_input(f"Jumlah / Berat ({unit_str}) #{i+1}:", min_value=0.0, value=default_qty, step=100.0, key=f"q_val_{i}")
 
         if qty_val > 0:
             e_kg = qty_val * factor_val
@@ -498,7 +561,7 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
         if i < num_items - 1:
             st.markdown("---")
 
-    # DIPINDAHKAN KE HALAMAN UTAMA DI BAWAH MATERIAL
+    # LOGISTIK & ALAT BERAT DI BAWAH MATERIAL
     st.markdown("---")
     st.subheader("🚚 Pengangkutan Logistik & Alat Berat")
     c_trans1, c_trans2 = st.columns(2)
@@ -579,7 +642,7 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
         st.info("💡 Masukkan jumlah/besaran material pada form di atas untuk menampilkan analisis grafik emisi dan laporan PDF.")
 
 # ==========================================
-# MENU 3: DATABASE MATERIAL ICE (OTOMATIS)
+# MENU 3: DATABASE MATERIAL ICE
 # ==========================================
 elif menu == "📊 Database Material ICE (Otomatis)":
     st.title("📊 Master Database Material ICE (Auto-Sync)")
@@ -588,7 +651,7 @@ elif menu == "📊 Database Material ICE (Otomatis)":
     **ℹ️ Status Integrasi Database ICE:**  
     * **Versi Database Terdeteksi:** `{ice_version}`  
     * **Total Material Terdaftar:** `{len(df_ice_materials)} Jenis Material`  
-    * **Mekanisme Update:** Data di bawah ini dibaca **langsung dari file Excel**. Jika di kemudian hari terdapat pembaruan data, developer/admin cukup mengganti file `.xlsx` di repository GitHub, dan seluruh data di halaman ini akan berganti secara otomatis.
+    * **Mekanisme Update:** Data dibaca **langsung dari file Excel**. Jika terdapat pembaruan data, developer/admin cukup mengganti file `.xlsx` di repository GitHub.
     """)
 
     col_search1, col_search2 = st.columns([1, 2])
@@ -718,7 +781,7 @@ elif menu == "📚 Siklus Hidup Emisi & Solusi":
         with col_t1a:
             st.error("""
             **🔥 Sumber Emisi Utama:**
-            * **Kalsinasi Batu Kapur:** Pembakaran $\text{CaCO}_3 \rightarrow \text{CaO} + \text{CO}_2$ pada kiln semen dengan suhu $>1400^\circ\text{C}$.
+            * **Kalsinasi Batu Kapur:** Pembakaran $\\text{CaCO}_3 \\rightarrow \\text{CaO} + \\text{CO}_2$ pada kiln semen dengan suhu $>1400^\\circ\\text{C}$.
             * **Peleburan Bijih Besi:** Penggunaan batu bara koks (*coking coal*) pada *Blast Furnace* pabrik baja.
             * **Pembuatan Kaca & Keramik:** Pembakaran bahan mentah menggunakan gas alam cair bertekanan tinggi.
             """)
@@ -744,7 +807,7 @@ elif menu == "📚 Siklus Hidup Emisi & Solusi":
         with col_t2b:
             st.success("""
             **💡 Solusi & Best Practices:**
-            * **Local Material Sourcing:** Memprioritaskan pembelian material dari produsen dalam radius $< 100\text{ km}$ dari tapak proyek.
+            * **Local Material Sourcing:** Memprioritaskan pembelian material dari produsen dalam radius $< 100\\text{ km}$ dari tapak proyek.
             * **Optimasi Rute & Armada:** Menggunakan truk bermesin efisien (Euro IV/VI) dan memaksimalkan kapasitas muatan angkut.
             * **Transportasi Jalur Laut/Kereta:** Mengalihkan moda transportasi darat jarak jauh ke rute kapal/kereta yang beremisi lebih rendah per ton-km.
             """)
@@ -796,7 +859,7 @@ elif menu == "📚 Siklus Hidup Emisi & Solusi":
             **🔥 Sumber Emisi Utama:**
             * **Pembongkaran Struktur (Demolisi):** Energi dari alat pemukul (*breaker*), peledakan, dan penghancuran beton.
             * **Pengangkutan Puing ke TPA:** Emisi pengiriman limbah konstruksi ke tempat pembuangan akhir.
-            * **Emisi Landfill:** Penguraian sisa kayu/organik yang menghasilkan gas metana ($\text{CH}_4$).
+            * **Emisi Landfill:** Penguraian sisa kayu/organik yang menghasilkan gas metana ($\\text{CH}_4$).
             """)
         with col_t5b:
             st.success("""

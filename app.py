@@ -498,10 +498,14 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
         if i < num_items - 1:
             st.markdown("---")
 
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("🚚 Pengangkutan Logistik & Alat Berat")
-    st.session_state["dist_km"] = st.sidebar.number_input("Jarak Pengangkutan (km):", min_value=0.0, value=float(st.session_state["dist_km"]), step=5.0)
-    st.session_state["fuel_liter"] = st.sidebar.number_input("Solar Alat Berat (Liter):", min_value=0.0, value=float(st.session_state["fuel_liter"]), step=50.0)
+    # DIPINDAHKAN KE HALAMAN UTAMA DI BAWAH MATERIAL
+    st.markdown("---")
+    st.subheader("🚚 Pengangkutan Logistik & Alat Berat")
+    c_trans1, c_trans2 = st.columns(2)
+    with c_trans1:
+        st.session_state["dist_km"] = st.number_input("Jarak Pengangkutan (km):", min_value=0.0, value=float(st.session_state["dist_km"]), step=5.0, key="calc_dist_km")
+    with c_trans2:
+        st.session_state["fuel_liter"] = st.number_input("Solar Alat Berat (Liter):", min_value=0.0, value=float(st.session_state["fuel_liter"]), step=50.0, key="calc_fuel_liter")
 
     transport_emission_kg = st.session_state["dist_km"] * 0.25 * 10
     equipment_emission_kg = st.session_state["fuel_liter"] * 2.68

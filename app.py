@@ -439,46 +439,73 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
     with st.expander("💾 Backup / Restorasi Proyek (JSON) & Impor File RAB Excel", expanded=True):
         c_exp1, c_exp2 = st.columns(2)
         
-        with c_exp1:
+       with c_exp1:
             st.subheader("📥 Impor File RAB (.xlsx / .csv)")
-            uploaded_rab = st.file_uploader("Unggah file RAB Excel/CSV (Kolom: Material, Jumlah):", type=["xlsx", "csv"], key="rab_uploader")
+            uploaded_rab = st.file_uploader("Unggah file RAB Excel/CSV:", type=["xlsx", "csv"], key="rab_uploader")
             
             if uploaded_rab is not None:
-                # Periksa apakah file baru diunggah
                 file_id = f"{uploaded_rab.name}_{uploaded_rab.size}"
-                if st.session_state.get("last_uploaded_rab") != file_id:
-                    parsed_df, err_msg = smart_parse_rab_file(uploaded_rab)
-                    if parsed_df is not None:
-                        num_rows = len(parsed_df)
-                        # 1. Update jumlah item material
-                        st.session_state["calc_num_items"] = num_rows
-                        st.session_state["input_num_items"] = num_rows
+                if st.session_state.get("last_uploaded_rab_id") != file_id:
+                    try:
+                        df_rab = pd.read_csv(uploaded_rab) if uploaded_rab.name.endswith(".csv") else pd.read_excel(uploaded_rab)
+                        df_rab.columns = [str(c).strip() for c in df_rab.columns]
                         
-                        ice_names = df_ice_materials["Nama Material"].tolist()
-                        
-                        # 2. Masukkan data RAB langsung ke widget form input
-                        for i, (_, row) in enumerate(parsed_df.iterrows()):
-                            mat_name = str(row["Material"]).strip()
-                            qty_val = float(row["Jumlah"])
+                        # Buat pencocokan kolom cerdas
+                        col_map = {}
+                        for c in df_rab.columns:
+                            clow = c.lower()
+                            if "material" in clow or "nama" in clow or "bahan" in clow:
+                                col_map["Material"] = c
+                            elif "satuan" in clow or "unit" in clow:
+                                col_map["Satuan"] = c
+                            elif "faktor" in clow or "emisi" in clow or "co2" in clow:
+                                col_map["Faktor Emisi"] = c
+                            elif "harga" in clow or "price" in clow:
+                                col_map["Harga Satuan"] = c
+                            elif "jumlah" in clow or "volume" in clow or "qty" in clow:
+                                col_map["Jumlah"] = c
+
+                        if "Material" in col_map and "Jumlah" in col_map:
+                            num_r = len(df_rab)
+                            st.session_state["calc_num_items"] = num_r
+                            st.session_state["input_num_items"] = num_r
                             
-                            # Cek apakah nama material ada di ICE Database
-                            if mat_name in ice_names:
-                                st.session_state[f"calc_sel_{i}"] = mat_name
-                                st.session_state[f"q_val_{i}"] = qty_val
-                            else:
-                                # Jika tidak ada di ICE, jadikan Material Kustom
-                                st.session_state[f"calc_sel_{i}"] = "➕ Material Kustom (Isi Sendiri)"
-                                st.session_state[f"c_name_{i}"] = mat_name
-                                st.session_state[f"c_qty_{i}"] = qty_val
-                                st.session_state[f"c_unit_{i}"] = "kg"
-                                st.session_state[f"c_fact_{i}"] = 1.0
-                                st.session_state[f"c_price_{i}"] = 10000.0
-                        
-                        st.session_state["last_uploaded_rab"] = file_id
-                        st.success(f"✅ Berhasil mengimpor {num_rows} item material dari RAB!")
-                        st.rerun() # Refresh instan agar form langsung terisi
-                    else:
-                        st.error(err_msg)
+                            ice_lookup = dict(zip(df_ice_materials["Nama Material"], df_ice_materials["Faktor Emisi (kg CO2e/kg)"]))
+                            
+                            for idx, row in df_rab.iterrows():
+                                mat_v = str(row[col_map["Material"]]).strip()
+                                qty_v = float(pd.to_numeric(row[col_map["Jumlah"]], errors='coerce') or 0)
+                                sat_v = str(row[col_map["Satuan"]]).strip() if "Satuan" in col_map and pd.notna(row[col_map["Satuan"]]) else "kg"
+                                
+                                # Ambil Faktor Emisi dari Excel -> jika tidak ada, ambil dari DB ICE -> default 1.0
+                                if "Faktor Emisi" in col_map and pd.notna(row[col_map["Faktor Emisi"]]):
+                                    fe_v = float(pd.to_numeric(row[col_map["Faktor Emisi"]], errors='coerce') or 1.0)
+                                elif mat_v in ice_lookup:
+                                    fe_v = float(ice_lookup[mat_v])
+                                else:
+                                    fe_v = 1.0
+
+                                # Ambil Harga Satuan dari Excel -> jika tidak ada, default Rp 15.000 / Rp 10.000
+                                if "Harga Satuan" in col_map and pd.notna(row[col_map["Harga Satuan"]]):
+                                    hrg_v = float(pd.to_numeric(row[col_map["Harga Satuan"]], errors='coerce') or 10000.0)
+                                else:
+                                    hrg_v = 15000.0 if mat_v in ice_lookup else 10000.0
+
+                                # Set nilai ke form kustom dan form database
+                                st.session_state[f"calc_sel_{idx}"] = "➕ Material Kustom (Isi Sendiri)"
+                                st.session_state[f"c_name_{idx}"] = mat_v
+                                st.session_state[f"c_unit_{idx}"] = sat_v
+                                st.session_state[f"c_fact_{idx}"] = fe_v
+                                st.session_state[f"c_price_{idx}"] = hrg_v
+                                st.session_state[f"c_qty_{idx}"] = qty_v
+                            
+                            st.session_state["last_uploaded_rab_id"] = file_id
+                            st.success(f"✅ Berhasil mengimpor {num_r} item material beserta Faktor Emisi & Harga dari file!")
+                            st.rerun()
+                        else:
+                            st.error("File RAB wajib memiliki minimal kolom 'Material' dan 'Jumlah'.")
+                    except Exception as e:
+                        st.error(f"Gagal membaca file RAB: {e}")
 
         with c_exp2:
             st.subheader("💾 Backup Draft Proyek (JSON)")

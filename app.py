@@ -1354,13 +1354,13 @@ with col_sc3:
                     )
                 else:
                     st.button(
-                        "📄 Download Laporan Resmi (PDF)", 
-                        disabled=True, 
-                        use_container_width=True, 
+                        "📄 Download Laporan Resmi (PDF)",
+                        disabled=True,
+                        use_container_width=True,
                         help="Modul ReportLab belum terpasang di sistem python."
                     )
-                else:
-                    st.info("💡 Masukkan jumlah/besaran material pada form di atas untuk menampilkan analisis grafik emisi dan laporan PDF.")
+    else:
+        st.info("💡 Masukkan jumlah/besaran material pada form di atas untuk menampilkan analisis grafik emisi dan laporan PDF.")
 
 # ==========================================
 # MENU 3: DATABASE MATERIAL ICE (OTOMATIS)

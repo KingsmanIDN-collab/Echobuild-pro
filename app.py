@@ -979,14 +979,56 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
 
     st.markdown("---")
     
+    # Callback fungsi kontrol baris & preset
+    def cb_add_row():
+        curr = int(st.session_state.get("input_num_items", st.session_state.get("calc_num_items", 3)))
+        nxt = min(30, curr + 1)
+        st.session_state["input_num_items"] = nxt
+        st.session_state["calc_num_items"] = nxt
+
+    def cb_remove_row():
+        curr = int(st.session_state.get("input_num_items", st.session_state.get("calc_num_items", 3)))
+        nxt = max(1, curr - 1)
+        st.session_state["input_num_items"] = nxt
+        st.session_state["calc_num_items"] = nxt
+
+    def cb_load_preset():
+        st.session_state["input_num_items"] = 3
+        st.session_state["calc_num_items"] = 3
+        st.session_state["dist_km"] = 30.0
+        st.session_state["fuel_liter"] = 150.0
+        
+        c_mat = [m for m in df_ice_materials["Nama Material"] if "concrete" in m.lower() or "beton" in m.lower()]
+        s_mat = [m for m in df_ice_materials["Nama Material"] if "steel" in m.lower() or "baja" in m.lower()]
+        t_mat = [m for m in df_ice_materials["Nama Material"] if "brick" in m.lower() or "timber" in m.lower() or "kayu" in m.lower()]
+        
+        mat1 = c_mat[0] if c_mat else df_ice_materials["Nama Material"].iloc[0]
+        mat2 = s_mat[0] if s_mat else (df_ice_materials["Nama Material"].iloc[1] if len(df_ice_materials) > 1 else mat1)
+        mat3 = t_mat[0] if t_mat else (df_ice_materials["Nama Material"].iloc[2] if len(df_ice_materials) > 2 else mat1)
+        
+        st.session_state["calc_sel_0"] = mat1
+        st.session_state["p_val_0"] = 1200.0
+        st.session_state["q_val_0"] = 25000.0
+        
+        st.session_state["calc_sel_1"] = mat2
+        st.session_state["p_val_1"] = 14500.0
+        st.session_state["q_val_1"] = 3500.0
+        
+        st.session_state["calc_sel_2"] = mat3
+        st.session_state["p_val_2"] = 1800.0
+        st.session_state["q_val_2"] = 8000.0
+
+    # Inisialisasi awal key input_num_items jika belum ada
+    if "input_num_items" not in st.session_state:
+        st.session_state["input_num_items"] = int(st.session_state.get("calc_num_items", 3))
+
     # KONTROL JUMLAH & PRESET CEPAT
-    col_cnt1, col_cnt2, col_cnt3 = st.columns([1.5, 1, 1.2])
+    col_cnt1, col_cnt2, col_cnt3, col_cnt4 = st.columns([1.4, 0.9, 0.9, 1.3])
     with col_cnt1:
         num_items = st.number_input(
             "🔢 Jumlah Jenis Material:",
             min_value=1,
             max_value=30,
-            value=int(st.session_state.get("calc_num_items", 3)),
             step=1,
             key="input_num_items"
         )
@@ -995,39 +1037,17 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
     with col_cnt2:
         st.write("")
         st.write("")
-        if st.button("➕ Tambah Baris", use_container_width=True, help="Tambahkan 1 baris input material"):
-            st.session_state["calc_num_items"] = min(30, int(st.session_state["calc_num_items"]) + 1)
-            st.rerun()
+        st.button("➕ Tambah Baris", use_container_width=True, on_click=cb_add_row, help="Tambahkan 1 baris input material")
             
     with col_cnt3:
         st.write("")
         st.write("")
-        if st.button("⚡ Muat Contoh Proyek", use_container_width=True, help="Isi otomatis dengan simulasi proyek gedung standar"):
-            st.session_state["calc_num_items"] = 3
-            st.session_state["dist_km"] = 30.0
-            st.session_state["fuel_liter"] = 150.0
-            
-            # Cari material umum jika ada
-            c_mat = [m for m in df_ice_materials["Nama Material"] if "concrete" in m.lower() or "beton" in m.lower()]
-            s_mat = [m for m in df_ice_materials["Nama Material"] if "steel" in m.lower() or "baja" in m.lower()]
-            t_mat = [m for m in df_ice_materials["Nama Material"] if "brick" in m.lower() or "timber" in m.lower() or "kayu" in m.lower()]
-            
-            mat1 = c_mat[0] if c_mat else df_ice_materials["Nama Material"].iloc[0]
-            mat2 = s_mat[0] if s_mat else (df_ice_materials["Nama Material"].iloc[1] if len(df_ice_materials) > 1 else mat1)
-            mat3 = t_mat[0] if t_mat else (df_ice_materials["Nama Material"].iloc[2] if len(df_ice_materials) > 2 else mat1)
-            
-            st.session_state["calc_sel_0"] = mat1
-            st.session_state["p_val_0"] = 1200.0
-            st.session_state["q_val_0"] = 25000.0
-            
-            st.session_state["calc_sel_1"] = mat2
-            st.session_state["p_val_1"] = 14500.0
-            st.session_state["q_val_1"] = 3500.0
-            
-            st.session_state["calc_sel_2"] = mat3
-            st.session_state["p_val_2"] = 1800.0
-            st.session_state["q_val_2"] = 8000.0
-            st.rerun()
+        st.button("➖ Kurangi Baris", use_container_width=True, on_click=cb_remove_row, help="Kurangi 1 baris input material")
+
+    with col_cnt4:
+        st.write("")
+        st.write("")
+        st.button("⚡ Muat Contoh Proyek", use_container_width=True, on_click=cb_load_preset, help="Isi otomatis dengan simulasi proyek gedung standar")
 
     ice_mat_names = df_ice_materials["Nama Material"].tolist()
     all_mat_options = ["➕ Material Kustom (Isi Sendiri)"] + ice_mat_names
@@ -1419,7 +1439,18 @@ elif menu == "📊 Database Material ICE (Otomatis)":
     if search_query:
         display_df = display_df[display_df["Nama Material"].str.contains(search_query, case=False, na=False)]
 
-    st.markdown(f"**Menampilkan `{len(display_df)}` dari `{len(df_ice_materials)}` material.**")
+    if not display_df.empty:
+        c_stat1, c_stat2, c_stat3 = st.columns(3)
+        with c_stat1:
+            st.metric("Total Material Tampil", f"{len(display_df):,} Jenis")
+        with c_stat2:
+            avg_fe = display_df["Faktor Emisi (kg CO2e/kg)"].mean()
+            st.metric("Rata-rata Faktor Emisi", f"{avg_fe:.4f} kg CO2e/kg")
+        with c_stat3:
+            min_row = display_df.sort_values(by="Faktor Emisi (kg CO2e/kg)").iloc[0]
+            st.metric("Emisi Terendah (Best Eco)", f"{min_row['Faktor Emisi (kg CO2e/kg)']:.4f} kg CO2e/kg")
+
+    st.markdown("<br>", unsafe_allow_html=True)
     st.dataframe(
         display_df,
         use_container_width=True,

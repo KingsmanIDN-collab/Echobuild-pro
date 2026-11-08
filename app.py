@@ -1188,101 +1188,76 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
     # ==========================================
     st.markdown("---")
     st.subheader("📊 Executive Carbon & Cost Intelligence Scorecard")
+
+# Buat 3 Kolom
+col_sc1, col_sc2, col_sc3 = st.columns(3)
+
+# 🟢 KARTU 1: TOTAL EMISI KARBON
+with col_sc1:
+    status_class = "status-optimal" if total_project_emission_ton < 10 else ("status-moderate" if total_project_emission_ton < 50 else "status-critical")
+    status_label = "STATUS OPTIMAL" if total_project_emission_ton < 10 else ("PERHATIAN" if total_project_emission_ton < 50 else "TINGGI")
+    pill_class = "pill-optimal" if total_project_emission_ton < 10 else ("pill-moderate" if total_project_emission_ton < 50 else "pill-critical")
     
-    # Logika Penentuan Status Emisi
-    if total_project_emission_ton == 0:
-        status_class = "status-optimal"
-        pill_class = "pill-optimal"
-        status_badge = "⚪ DATA KOSONG"
-        status_desc = "Masukkan volume material di atas untuk menghasilkan kalkulasi emisi proyek."
-    elif total_project_emission_ton < 10.0:
-        status_class = "status-optimal"
-        pill_class = "pill-optimal"
-        status_badge = "🟢 STATUS OPTIMAL"
-        status_desc = "Jejak karbon terkontrol & efisien (Memenuhi Benchmark Green Building)"
-    elif total_project_emission_ton <= 50.0:
-        status_class = "status-moderate"
-        pill_class = "pill-moderate"
-        status_badge = "🟡 STATUS MODERAT"
-        status_desc = "Intensitas karbon rata-rata industri; disarankan optimasi substitusi material"
-    else:
-        status_class = "status-critical"
-        pill_class = "pill-critical"
-        status_badge = "🔴 STATUS KRITIS"
-        status_desc = "Intensitas karbon tinggi; segera pertimbangkan material substitusi rendah emisi"
-
-    pct_mat = (total_mat_emission_kg / total_project_emission_kg * 100) if total_project_emission_kg > 0 else 0
-    pct_trans = (transport_emission_kg / total_project_emission_kg * 100) if total_project_emission_kg > 0 else 0
-    pct_eq = (equipment_emission_kg / total_project_emission_kg * 100) if total_project_emission_kg > 0 else 0
-
     st.markdown(f"""
-    <div class="exec-metrics-grid">
-        <!-- KARTU 1: TOTAL EMISI KARBON -->
-        <div class="exec-metric-card {status_class}">
-            <div>
-                <div class="exec-card-head">
-                    <div class="exec-card-title-group">
-                        <span class="exec-card-icon">🌍</span>
-                        <span class="exec-card-title">Total Emisi Karbon Proyek</span>
-                    </div>
-                    <span class="exec-status-pill {pill_class}">{status_badge}</span>
+    <div class="exec-metric-card {status_class}">
+        <div>
+            <div class="exec-card-head">
+                <div class="exec-card-title-group">
+                    <span class="exec-card-icon">🌍</span>
+                    <span class="exec-card-title">Total Emisi Karbon Proyek</span>
                 </div>
-                <div class="exec-card-value">
-                    {total_project_emission_ton:,.2f}
-                    <span class="exec-card-unit">Ton CO2e</span>
-                </div>
+                <span class="exec-status-pill {pill_class}">● {status_label}</span>
             </div>
-            <div class="exec-card-subtext">
-                <b>{status_desc}</b><br>
-                <span style="font-size: 0.77rem; color: #64748b; margin-top: 5px; display: inline-block;">
-                    Porsi: Material <b>{pct_mat:.1f}%</b> • Logistik <b>{pct_trans:.1f}%</b> • Alat <b>{pct_eq:.1f}%</b>
-                </span>
+            <div class="exec-card-value">
+                {total_project_emission_ton:,.2f} <span class="exec-card-unit">Ton CO2e</span>
             </div>
         </div>
+        <div class="exec-card-subtext">
+            Akumulasi emisi material (A1-A3), logistik (A4), dan alat berat (A5).
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-        <!-- KARTU 2: ESTIMASI BIAYA MATERIAL -->
-        <div class="exec-metric-card theme-finance">
-            <div>
-                <div class="exec-card-head">
-                    <div class="exec-card-title-group">
-                        <span class="exec-card-icon">💼</span>
-                        <span class="exec-card-title">Total Estimasi Biaya</span>
-                    </div>
-                    <span class="exec-status-pill pill-finance">💰 ANGGARAN</span>
+# 🔵 KARTU 2: ESTIMASI BIAYA MATERIAL
+with col_sc2:
+    st.markdown(f"""
+    <div class="exec-metric-card theme-finance">
+        <div>
+            <div class="exec-card-head">
+                <div class="exec-card-title-group">
+                    <span class="exec-card-icon">💰</span>
+                    <span class="exec-card-title">Total Estimasi Biaya</span>
                 </div>
-                <div class="exec-card-value">
-                    Rp {total_mat_cost:,.0f}
-                </div>
+                <span class="exec-status-pill pill-finance">ANGGARAN</span>
             </div>
-            <div class="exec-card-subtext">
-                Estimasi belanja pengadaan {len(results)} jenis material struktur proyek.<br>
-                <span style="font-size: 0.77rem; color: #64748b; margin-top: 5px; display: inline-block;">
-                    Berdasarkan standar harga satuan yang Anda masukkan
-                </span>
+            <div class="exec-card-value">
+                Rp {total_mat_cost:,.0f}
             </div>
         </div>
+        <div class="exec-card-subtext">
+            Estimasi belanja pengadaan {len(results)} jenis material struktur proyek.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-        <!-- KARTU 3: EFISIENSI BIAYA / EMISI -->
-        <div class="exec-metric-card theme-efficiency">
-            <div>
-                <div class="exec-card-head">
-                    <div class="exec-card-title-group">
-                        <span class="exec-card-icon">⚖️</span>
-                        <span class="exec-card-title">Rasio Biaya / Emisi</span>
-                    </div>
-                    <span class="exec-status-pill pill-efficiency">⚡ INDEKS EFISIENSI</span>
+# 🟣 KARTU 3: RASIO BIAYA / EMISI
+with col_sc3:
+    st.markdown(f"""
+    <div class="exec-metric-card theme-efficiency">
+        <div>
+            <div class="exec-card-head">
+                <div class="exec-card-title-group">
+                    <span class="exec-card-icon">⚖️</span>
+                    <span class="exec-card-title">Rasio Biaya / Emisi</span>
                 </div>
-                <div class="exec-card-value">
-                    Rp {cost_per_ton:,.0f}
-                    <span class="exec-card-unit">/ Ton CO2e</span>
-                </div>
+                <span class="exec-status-pill pill-efficiency">INDEKS EFISIENSI</span>
             </div>
-            <div class="exec-card-subtext">
-                Indeks belanja modal per Ton emisi karbon yang dihasilkan.<br>
-                <span style="font-size: 0.77rem; color: #64748b; margin-top: 5px; display: inline-block;">
-                    Membantu mengevaluasi *cost-effectiveness* dekarbonisasi struktur
-                </span>
+            <div class="exec-card-value">
+                Rp {cost_per_ton:,.0f} <span class="exec-card-unit">/ Ton CO2e</span>
             </div>
+        </div>
+        <div class="exec-card-subtext">
+            Biaya yang dikeluarkan per satu ton emisi karbon yang dihasilkan.
         </div>
     </div>
     """, unsafe_allow_html=True)

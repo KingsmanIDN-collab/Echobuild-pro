@@ -841,19 +841,51 @@ if menu == "🏠 Beranda":
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.info("### 📦 Material Carbon\nHitung jejak karbon dari berbagai jenis material struktur.")
+        st.markdown("""
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px 18px 16px 18px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); min-height: 145px; display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 12px;">
+            <div>
+                <div style="font-size: 1.8rem; margin-bottom: 8px;">📦</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Material Carbon</div>
+                <div style="font-size: 0.82rem; color: #64748b; line-height: 1.45;">Hitung jejak karbon dari ratusan varian material struktur bersertifikasi ICE.</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         st.button("Buka Kalkulator ➔", key="btn_nav_mat", use_container_width=True, on_click=navigate_to, args=("🧮 Kalkulator & Analisis Proyek",))
 
     with col2:
-        st.warning("### 🚛 Logistik & Alat\nIntegrasi emisi pengangkutan truk & BBM solar alat berat.")
+        st.markdown("""
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px 18px 16px 18px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); min-height: 145px; display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 12px;">
+            <div>
+                <div style="font-size: 1.8rem; margin-bottom: 8px;">🚛</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Logistik & Alat</div>
+                <div style="font-size: 0.82rem; color: #64748b; line-height: 1.45;">Integrasi emisi pengangkutan armada truk & BBM solar alat berat di tapak proyek.</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         st.button("Hitung Logistik ➔", key="btn_nav_log", use_container_width=True, on_click=navigate_to, args=("🧮 Kalkulator & Analisis Proyek",))
 
     with col3:
-        st.success("### ⚖️ Komparasi Skenario\nBandingkan Desain Konvensional vs Green Design secara instan.")
+        st.markdown("""
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px 18px 16px 18px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); min-height: 145px; display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 12px;">
+            <div>
+                <div style="font-size: 1.8rem; margin-bottom: 8px;">⚖️</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Komparasi Skenario</div>
+                <div style="font-size: 0.82rem; color: #64748b; line-height: 1.45;">Bandingkan Desain Konvensional vs Green Alternative secara instan.</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         st.button("Mulai Komparasi ➔", key="btn_nav_komp", use_container_width=True, on_click=navigate_to, args=("⚖️ Simulasi Komparasi Desain",))
 
     with col4:
-        st.error("### 📚 Siklus Hidup & LCA\nPelajari modul tahap emisi A1-D dan strategi teknisnya.")
+        st.markdown("""
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px 18px 16px 18px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); min-height: 145px; display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 12px;">
+            <div>
+                <div style="font-size: 1.8rem; margin-bottom: 8px;">📚</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Siklus Hidup & LCA</div>
+                <div style="font-size: 0.82rem; color: #64748b; line-height: 1.45;">Pelajari modul tahapan emisi A1-D dan strategi mitigasi teknis teknik sipil.</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         st.button("Pelajari LCA ➔", key="btn_nav_lca", use_container_width=True, on_click=navigate_to, args=("📚 Siklus Hidup Emisi & Solusi",))
 
 # ==========================================
@@ -1189,78 +1221,78 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
     st.markdown("---")
     st.subheader("📊 Executive Carbon & Cost Intelligence Scorecard")
 
-# Buat 3 Kolom
-col_sc1, col_sc2, col_sc3 = st.columns(3)
+    # Buat 3 Kolom
+    col_sc1, col_sc2, col_sc3 = st.columns(3)
 
-# 🟢 KARTU 1: TOTAL EMISI KARBON
-with col_sc1:
-    status_class = "status-optimal" if total_project_emission_ton < 10 else ("status-moderate" if total_project_emission_ton < 50 else "status-critical")
-    status_label = "STATUS OPTIMAL" if total_project_emission_ton < 10 else ("PERHATIAN" if total_project_emission_ton < 50 else "TINGGI")
-    pill_class = "pill-optimal" if total_project_emission_ton < 10 else ("pill-moderate" if total_project_emission_ton < 50 else "pill-critical")
-    
-    st.markdown(f"""
-    <div class="exec-metric-card {status_class}">
-        <div>
-            <div class="exec-card-head">
-                <div class="exec-card-title-group">
-                    <span class="exec-card-icon">🌍</span>
-                    <span class="exec-card-title">Total Emisi Karbon Proyek</span>
+    # 🟢 KARTU 1: TOTAL EMISI KARBON
+    with col_sc1:
+        status_class = "status-optimal" if total_project_emission_ton < 10 else ("status-moderate" if total_project_emission_ton < 50 else "status-critical")
+        status_label = "STATUS OPTIMAL" if total_project_emission_ton < 10 else ("PERHATIAN" if total_project_emission_ton < 50 else "TINGGI")
+        pill_class = "pill-optimal" if total_project_emission_ton < 10 else ("pill-moderate" if total_project_emission_ton < 50 else "pill-critical")
+        
+        st.markdown(f"""
+        <div class="exec-metric-card {status_class}">
+            <div>
+                <div class="exec-card-head">
+                    <div class="exec-card-title-group">
+                        <span class="exec-card-icon">🌍</span>
+                        <span class="exec-card-title">Total Emisi Karbon Proyek</span>
+                    </div>
+                    <span class="exec-status-pill {pill_class}">● {status_label}</span>
                 </div>
-                <span class="exec-status-pill {pill_class}">● {status_label}</span>
+                <div class="exec-card-value">
+                    {total_project_emission_ton:,.2f} <span class="exec-card-unit">Ton CO2e</span>
+                </div>
             </div>
-            <div class="exec-card-value">
-                {total_project_emission_ton:,.2f} <span class="exec-card-unit">Ton CO2e</span>
+            <div class="exec-card-subtext">
+                Akumulasi emisi material (A1-A3), logistik (A4), dan alat berat (A5).
             </div>
         </div>
-        <div class="exec-card-subtext">
-            Akumulasi emisi material (A1-A3), logistik (A4), dan alat berat (A5).
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
-# 🔵 KARTU 2: ESTIMASI BIAYA MATERIAL
-with col_sc2:
-    st.markdown(f"""
-    <div class="exec-metric-card theme-finance">
-        <div>
-            <div class="exec-card-head">
-                <div class="exec-card-title-group">
-                    <span class="exec-card-icon">💰</span>
-                    <span class="exec-card-title">Total Estimasi Biaya</span>
+    # 🔵 KARTU 2: ESTIMASI BIAYA MATERIAL
+    with col_sc2:
+        st.markdown(f"""
+        <div class="exec-metric-card theme-finance">
+            <div>
+                <div class="exec-card-head">
+                    <div class="exec-card-title-group">
+                        <span class="exec-card-icon">💰</span>
+                        <span class="exec-card-title">Total Estimasi Biaya</span>
+                    </div>
+                    <span class="exec-status-pill pill-finance">ANGGARAN</span>
                 </div>
-                <span class="exec-status-pill pill-finance">ANGGARAN</span>
+                <div class="exec-card-value">
+                    Rp {total_mat_cost:,.0f}
+                </div>
             </div>
-            <div class="exec-card-value">
-                Rp {total_mat_cost:,.0f}
+            <div class="exec-card-subtext">
+                Estimasi belanja pengadaan {len(results)} jenis material struktur proyek.
             </div>
         </div>
-        <div class="exec-card-subtext">
-            Estimasi belanja pengadaan {len(results)} jenis material struktur proyek.
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
-# 🟣 KARTU 3: RASIO BIAYA / EMISI
-with col_sc3:
-    st.markdown(f"""
-    <div class="exec-metric-card theme-efficiency">
-        <div>
-            <div class="exec-card-head">
-                <div class="exec-card-title-group">
-                    <span class="exec-card-icon">⚖️</span>
-                    <span class="exec-card-title">Rasio Biaya / Emisi</span>
+    # 🟣 KARTU 3: RASIO BIAYA / EMISI
+    with col_sc3:
+        st.markdown(f"""
+        <div class="exec-metric-card theme-efficiency">
+            <div>
+                <div class="exec-card-head">
+                    <div class="exec-card-title-group">
+                        <span class="exec-card-icon">⚖️</span>
+                        <span class="exec-card-title">Rasio Biaya / Emisi</span>
+                    </div>
+                    <span class="exec-status-pill pill-efficiency">INDEKS EFISIENSI</span>
                 </div>
-                <span class="exec-status-pill pill-efficiency">INDEKS EFISIENSI</span>
+                <div class="exec-card-value">
+                    Rp {cost_per_ton:,.0f} <span class="exec-card-unit">/ Ton CO2e</span>
+                </div>
             </div>
-            <div class="exec-card-value">
-                Rp {cost_per_ton:,.0f} <span class="exec-card-unit">/ Ton CO2e</span>
+            <div class="exec-card-subtext">
+                Biaya yang dikeluarkan per satu ton emisi karbon yang dihasilkan.
             </div>
         </div>
-        <div class="exec-card-subtext">
-            Biaya yang dikeluarkan per satu ton emisi karbon yang dihasilkan.
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
     st.markdown("---")
 
@@ -1417,12 +1449,15 @@ elif menu == "⚖️ Simulasi Komparasi Desain":
         </div>
         """, unsafe_allow_html=True)
         mat_a = st.selectbox("Pilih Material Skenario A:", mat_options, index=0, key="sa_m")
-        vol_a = st.number_input("Jumlah Material A (kg):", min_value=0.0, value=1000.0, key="v_a")
+        vol_a = st.number_input("Jumlah Material A (kg):", min_value=0.0, value=1000.0, step=100.0, key="v_a")
+        price_a = st.number_input("Harga Satuan Material A (Rp/kg):", min_value=0.0, value=15000.0, step=1000.0, key="p_comp_a")
         
         f_a = float(df_ice_materials[df_ice_materials["Nama Material"] == mat_a].iloc[0]["Faktor Emisi (kg CO2e/kg)"])
         emisi_a = vol_a * f_a
+        cost_a = vol_a * price_a
 
     emisi_b = 0
+    cost_b = 0
     with col_s2:
         st.markdown("""
         <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-top: 4px solid #10b981; border-radius: 12px; padding: 14px 18px; margin-bottom: 12px;">
@@ -1431,22 +1466,27 @@ elif menu == "⚖️ Simulasi Komparasi Desain":
         </div>
         """, unsafe_allow_html=True)
         mat_b = st.selectbox("Pilih Material Skenario B:", mat_options, index=min(1, len(mat_options)-1), key="sb_m")
-        vol_b = st.number_input("Jumlah Material B (kg):", min_value=0.0, value=1000.0, key="v_b")
+        vol_b = st.number_input("Jumlah Material B (kg):", min_value=0.0, value=1000.0, step=100.0, key="v_b")
+        price_b = st.number_input("Harga Satuan Material B (Rp/kg):", min_value=0.0, value=14000.0, step=1000.0, key="p_comp_b")
         
         f_b = float(df_ice_materials[df_ice_materials["Nama Material"] == mat_b].iloc[0]["Faktor Emisi (kg CO2e/kg)"])
         emisi_b = vol_b * f_b
+        cost_b = vol_b * price_b
 
     st.markdown("---")
-    st.subheader("📈 Hasil Perbandingan Komparasi Emisi")
+    st.subheader("📈 Hasil Analisis Komparasi Emisi & Biaya")
 
     emisi_a_ton = emisi_a / 1000
     emisi_b_ton = emisi_b / 1000
     hemat_emisi_pct = ((emisi_a - emisi_b) / emisi_a * 100) if emisi_a > 0 else 0
-    delta_ton = abs(emisi_a_ton - emisi_b_ton)
+    delta_emisi_ton = emisi_a_ton - emisi_b_ton
+    delta_cost = cost_b - cost_a
+    hemat_biaya_pct = ((cost_a - cost_b) / cost_a * 100) if cost_a > 0 else 0
 
     # Executive Komparasi Metric Cards
     st.markdown(f"""
-    <div class="exec-metrics-grid" style="grid-template-columns: 1fr 1fr;">
+    <div class="exec-metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+        <!-- Emisi A -->
         <div class="exec-metric-card status-critical">
             <div>
                 <div class="exec-card-head">
@@ -1459,11 +1499,12 @@ elif menu == "⚖️ Simulasi Komparasi Desain":
                 <div class="exec-card-value">{emisi_a_ton:,.3f} <span class="exec-card-unit">Ton CO2e</span></div>
             </div>
             <div class="exec-card-subtext">
-                Material: <b>{mat_a[:45]}</b><br>
-                Faktor Emisi: <b>{f_a:.6f} kg CO2e/kg</b>
+                Material: <b>{mat_a[:35]}...</b><br>
+                FE: <b>{f_a:.6f} kg CO2e/kg</b>
             </div>
         </div>
         
+        <!-- Emisi B -->
         <div class="exec-metric-card status-optimal">
             <div>
                 <div class="exec-card-head">
@@ -1471,36 +1512,74 @@ elif menu == "⚖️ Simulasi Komparasi Desain":
                         <span class="exec-card-icon">🟢</span>
                         <span class="exec-card-title">Emisi Skenario B</span>
                     </div>
-                    <span class="exec-status-pill pill-optimal">{'HEMAT ' + f'{hemat_emisi_pct:.1f}%' if hemat_emisi_pct > 0 else 'HEMAT 0%'}</span>
+                    <span class="exec-status-pill pill-optimal">{'REDUKSI ' + f'{hemat_emisi_pct:.1f}%' if hemat_emisi_pct > 0 else '0%'}</span>
                 </div>
                 <div class="exec-card-value">{emisi_b_ton:,.3f} <span class="exec-card-unit">Ton CO2e</span></div>
             </div>
             <div class="exec-card-subtext">
-                Material: <b>{mat_b[:45]}</b><br>
-                <b>Potensi Reduksi: {delta_ton:,.3f} Ton CO2e ({hemat_emisi_pct:.1f}%)</b>
+                Material: <b>{mat_b[:35]}...</b><br>
+                <b>Hemat Emisi: {abs(delta_emisi_ton):,.3f} Ton CO2e</b>
+            </div>
+        </div>
+
+        <!-- Biaya A vs B -->
+        <div class="exec-metric-card theme-finance">
+            <div>
+                <div class="exec-card-head">
+                    <div class="exec-card-title-group">
+                        <span class="exec-card-icon">💼</span>
+                        <span class="exec-card-title">Komparasi Anggaran</span>
+                    </div>
+                    <span class="exec-status-pill pill-finance">BIAYA PROYEK</span>
+                </div>
+                <div class="exec-card-value">Rp {cost_b:,.0f}</div>
+            </div>
+            <div class="exec-card-subtext">
+                Baseline (A): <b>Rp {cost_a:,.0f}</b><br>
+                <b>{'Hemat: Rp ' + f'{abs(delta_cost):,.0f} ({abs(hemat_biaya_pct):.1f}%)' if delta_cost < 0 else ('Investasi: +Rp ' + f'{delta_cost:,.0f}' if delta_cost > 0 else 'Biaya Sama')}</b>
             </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    comp_df = pd.DataFrame([
-        {"Skenario": "Skenario A (Baseline)", "Emisi (Ton CO2e)": emisi_a_ton},
-        {"Skenario": "Skenario B (Green Design)", "Emisi (Ton CO2e)": emisi_b_ton},
-    ])
+    col_ch1, col_ch2 = st.columns(2)
+    with col_ch1:
+        comp_df = pd.DataFrame([
+            {"Skenario": "Skenario A (Baseline)", "Emisi (Ton CO2e)": emisi_a_ton},
+            {"Skenario": "Skenario B (Green Design)", "Emisi (Ton CO2e)": emisi_b_ton},
+        ])
+        fig_comp = px.bar(
+            comp_df, 
+            x="Skenario", 
+            y="Emisi (Ton CO2e)", 
+            color="Skenario", 
+            title="Komparasi Total Emisi Karbon (Ton CO2e)",
+            color_discrete_map={
+                "Skenario A (Baseline)": "#ef4444",
+                "Skenario B (Green Design)": "#10b981"
+            }
+        )
+        fig_comp.update_layout(font_family="Plus Jakarta Sans", margin=dict(t=50, b=20, l=20, r=20), showlegend=False)
+        st.plotly_chart(fig_comp, use_container_width=True)
 
-    fig_comp = px.bar(
-        comp_df, 
-        x="Skenario", 
-        y="Emisi (Ton CO2e)", 
-        color="Skenario", 
-        title="Visualisasi Komparasi Total Emisi Karbon (Ton CO2e)",
-        color_discrete_map={
-            "Skenario A (Baseline)": "#ef4444",
-            "Skenario B (Green Design)": "#10b981"
-        }
-    )
-    fig_comp.update_layout(font_family="Plus Jakarta Sans", margin=dict(t=50, b=20, l=20, r=20), showlegend=False)
-    st.plotly_chart(fig_comp, use_container_width=True)
+    with col_ch2:
+        cost_df = pd.DataFrame([
+            {"Skenario": "Skenario A (Baseline)", "Biaya (Rp)": cost_a},
+            {"Skenario": "Skenario B (Green Design)", "Biaya (Rp)": cost_b},
+        ])
+        fig_cost = px.bar(
+            cost_df, 
+            x="Skenario", 
+            y="Biaya (Rp)", 
+            color="Skenario", 
+            title="Komparasi Total Biaya Material (Rp)",
+            color_discrete_map={
+                "Skenario A (Baseline)": "#64748b",
+                "Skenario B (Green Design)": "#0284c7"
+            }
+        )
+        fig_cost.update_layout(font_family="Plus Jakarta Sans", margin=dict(t=50, b=20, l=20, r=20), showlegend=False)
+        st.plotly_chart(fig_cost, use_container_width=True)
 
 # ==========================================
 # MENU 5: SIKLUS HIDUP EMISI & SOLUSI

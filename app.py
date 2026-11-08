@@ -1515,63 +1515,68 @@ elif menu == "⚖️ Simulasi Komparasi Desain":
     hemat_biaya_pct = ((cost_a - cost_b) / cost_a * 100) if cost_a > 0 else 0
 
     # Executive Komparasi Metric Cards
-    st.markdown(f"""
-    <div class="exec-metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
-        <!-- Emisi A -->
-        <div class="exec-metric-card status-critical">
-            <div>
-                <div class="exec-card-head">
-                    <div class="exec-card-title-group">
-                        <span class="exec-card-icon">🔴</span>
-                        <span class="exec-card-title">Emisi Skenario A</span>
-                    </div>
-                    <span class="exec-status-pill pill-critical">BASELINE</span>
-                </div>
-                <div class="exec-card-value">{emisi_a_ton:,.3f} <span class="exec-card-unit">Ton CO2e</span></div>
+    col_c1, col_c2, col_c3 = st.columns(3)
+    
+    with col_c1:
+        st.markdown(f"""
+<div class="exec-metric-card status-critical">
+    <div>
+        <div class="exec-card-head">
+            <div class="exec-card-title-group">
+                <span class="exec-card-icon">🔴</span>
+                <span class="exec-card-title">Emisi Skenario A</span>
             </div>
-            <div class="exec-card-subtext">
-                Material: <b>{mat_a[:35]}...</b><br>
-                FE: <b>{f_a:.6f} kg CO2e/kg</b>
-            </div>
+            <span class="exec-status-pill pill-critical">BASELINE</span>
         </div>
-        
-        <!-- Emisi B -->
-        <div class="exec-metric-card status-optimal">
-            <div>
-                <div class="exec-card-head">
-                    <div class="exec-card-title-group">
-                        <span class="exec-card-icon">🟢</span>
-                        <span class="exec-card-title">Emisi Skenario B</span>
-                    </div>
-                    <span class="exec-status-pill pill-optimal">{'REDUKSI ' + f'{hemat_emisi_pct:.1f}%' if hemat_emisi_pct > 0 else '0%'}</span>
-                </div>
-                <div class="exec-card-value">{emisi_b_ton:,.3f} <span class="exec-card-unit">Ton CO2e</span></div>
-            </div>
-            <div class="exec-card-subtext">
-                Material: <b>{mat_b[:35]}...</b><br>
-                <b>Hemat Emisi: {abs(delta_emisi_ton):,.3f} Ton CO2e</b>
-            </div>
-        </div>
-
-        <!-- Biaya A vs B -->
-        <div class="exec-metric-card theme-finance">
-            <div>
-                <div class="exec-card-head">
-                    <div class="exec-card-title-group">
-                        <span class="exec-card-icon">💼</span>
-                        <span class="exec-card-title">Komparasi Anggaran</span>
-                    </div>
-                    <span class="exec-status-pill pill-finance">BIAYA PROYEK</span>
-                </div>
-                <div class="exec-card-value">Rp {cost_b:,.0f}</div>
-            </div>
-            <div class="exec-card-subtext">
-                Baseline (A): <b>Rp {cost_a:,.0f}</b><br>
-                <b>{'Hemat: Rp ' + f'{abs(delta_cost):,.0f} ({abs(hemat_biaya_pct):.1f}%)' if delta_cost < 0 else ('Investasi: +Rp ' + f'{delta_cost:,.0f}' if delta_cost > 0 else 'Biaya Sama')}</b>
-            </div>
-        </div>
+        <div class="exec-card-value">{emisi_a_ton:,.3f} <span class="exec-card-unit">Ton CO2e</span></div>
     </div>
-    """, unsafe_allow_html=True)
+    <div class="exec-card-subtext">
+        Material: <b>{mat_a[:35]}...</b><br>
+        FE: <b>{f_a:.6f} kg CO2e/kg</b>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+        
+    with col_c2:
+        st.markdown(f"""
+<div class="exec-metric-card status-optimal">
+    <div>
+        <div class="exec-card-head">
+            <div class="exec-card-title-group">
+                <span class="exec-card-icon">🟢</span>
+                <span class="exec-card-title">Emisi Skenario B</span>
+            </div>
+            <span class="exec-status-pill pill-optimal">{'REDUKSI ' + f'{hemat_emisi_pct:.1f}%' if hemat_emisi_pct > 0 else '0%'}</span>
+        </div>
+        <div class="exec-card-value">{emisi_b_ton:,.3f} <span class="exec-card-unit">Ton CO2e</span></div>
+    </div>
+    <div class="exec-card-subtext">
+        Material: <b>{mat_b[:35]}...</b><br>
+        <b>Hemat Emisi: {abs(delta_emisi_ton):,.3f} Ton CO2e</b>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    with col_c3:
+        cost_diff_str = f"Hemat: Rp {abs(delta_cost):,.0f} ({abs(hemat_biaya_pct):.1f}%)" if delta_cost < 0 else (f"Investasi: +Rp {delta_cost:,.0f}" if delta_cost > 0 else "Biaya Sama")
+        st.markdown(f"""
+<div class="exec-metric-card theme-finance">
+    <div>
+        <div class="exec-card-head">
+            <div class="exec-card-title-group">
+                <span class="exec-card-icon">💼</span>
+                <span class="exec-card-title">Komparasi Anggaran</span>
+            </div>
+            <span class="exec-status-pill pill-finance">BIAYA PROYEK</span>
+        </div>
+        <div class="exec-card-value">Rp {cost_b:,.0f}</div>
+    </div>
+    <div class="exec-card-subtext">
+        Baseline (A): <b>Rp {cost_a:,.0f}</b><br>
+        <b>{cost_diff_str}</b>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
     col_ch1, col_ch2 = st.columns(2)
     with col_ch1:

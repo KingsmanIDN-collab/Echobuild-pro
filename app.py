@@ -1315,7 +1315,80 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
         """, unsafe_allow_html=True)
 
     st.markdown("---")
+    # ==========================================
+    # MODUL KALKULATOR CARBON OFFSET & AKSI HIJAU
+    # ==========================================
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.subheader("🌱 Skenario Carbon Offset (Target 10 Tahun)")
+    st.caption("Estimasi penyerapan emisi proyek melalui penanaman pohon kompensasi karbon serta rekomendasi mitigasi teknis.")
 
+    import math
+    trees_trembesi = math.ceil(total_project_emission_kg / 285) if total_project_emission_kg > 0 else 0
+    trees_mahoni = math.ceil(total_project_emission_kg / 140) if total_project_emission_kg > 0 else 0
+
+    col_off1, col_off2 = st.columns(2)
+
+    with col_off1:
+        st.markdown(f"""
+        <div style="background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%); border: 1px solid #a7f3d0; border-top: 5px solid #10b981; border-radius: 16px; padding: 20px 24px; box-shadow: 0 8px 16px -4px rgba(16, 185, 129, 0.12);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.4rem;">🌳</span>
+                    <span style="font-size: 0.85rem; font-weight: 800; color: #064e3b; text-transform: uppercase; letter-spacing: 0.5px;">Pohon Trembesi (Samanea saman)</span>
+                </div>
+                <span style="background: #d1fae5; color: #065f46; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; border: 1px solid #6ee7b7;">SERAPAN TINGGI</span>
+            </div>
+            <div style="font-size: 2.2rem; font-weight: 800; color: #064e3b; margin: 4px 0; letter-spacing: -0.5px;">
+                {trees_trembesi:,} <span style="font-size: 1rem; font-weight: 600; color: #047857;">Batang Pohon</span>
+            </div>
+            <div style="font-size: 0.82rem; color: #047857; margin-top: 10px; line-height: 1.5; border-top: 1px dashed #a7f3d0; padding-top: 10px;">
+                Dibutuhkan <b>{trees_trembesi:,} pohon Trembesi</b> untuk menyerap total emisi <b>{total_project_emission_ton:,.2f} Ton CO2e</b> dalam jangka waktu 10 tahun (daya serap ~28.5 kg CO2e/pohon/tahun).
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_off2:
+        st.markdown(f"""
+        <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); border: 1px solid #bbf7d0; border-top: 5px solid #059669; border-radius: 16px; padding: 20px 24px; box-shadow: 0 8px 16px -4px rgba(5, 150, 105, 0.12);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.4rem;">🌲</span>
+                    <span style="font-size: 0.85rem; font-weight: 800; color: #065f46; text-transform: uppercase; letter-spacing: 0.5px;">Pohon Mahoni (Swietenia mahagoni)</span>
+                </div>
+                <span style="background: #dcfce7; color: #166534; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; border: 1px solid #86efac;">STANDAR RTH</span>
+            </div>
+            <div style="font-size: 2.2rem; font-weight: 800; color: #065f46; margin: 4px 0; letter-spacing: -0.5px;">
+                {trees_mahoni:,} <span style="font-size: 1rem; font-weight: 600; color: #059669;">Batang Pohon</span>
+            </div>
+            <div style="font-size: 0.82rem; color: #059669; margin-top: 10px; line-height: 1.5; border-top: 1px dashed #bbf7d0; padding-top: 10px;">
+                Dibutuhkan <b>{trees_mahoni:,} pohon Mahoni</b> untuk menyerap total emisi <b>{total_project_emission_ton:,.2f} Ton CO2e</b> dalam jangka waktu 10 tahun (daya serap ~14.0 kg CO2e/pohon/tahun).
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("#### 💡 Rekomendasi Aksi Hijau & Mitigasi Emisi Proyek")
+    col_act1, col_act2, col_act3 = st.columns(3)
+
+    with col_act1:
+        st.info("""
+        **1. Substitusi Semen (SCM)**  
+        Gunakan *Fly Ash* atau *Slag (GGBFS)* sebesar 20-30% pada campuran beton untuk menekan emisi *Embodied Carbon* material hingga 25%.
+        """)
+
+    with col_act2:
+        st.warning("""
+        **2. Pasokan Material Lokal**  
+        Prioritaskan produsen material dalam radius < 50 km dari tapak proyek untuk meminimalkan emisi BBM pengangkutan logistik (Modul A4).
+        """)
+
+    with col_act3:
+        st.success("""
+        **3. Program Penghijauan Tapak**  
+        Alokasikan sebagian anggaran mitigasi lingkungan untuk penanaman pohon kompensasi di Ruang Terbuka Hijau (RTH) sekitar proyek.
+        """)
+
+    st.markdown("---")
     # TABEL & GRAFIK HASIL PERHITUNGAN
     if results:
         df = pd.DataFrame(results)

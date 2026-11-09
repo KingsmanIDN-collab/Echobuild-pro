@@ -602,7 +602,7 @@ def load_ice_excel_database():
                 {"Kategori": "Steel", "Nama Material": "Baja Tulangan (Konvensional)", "Faktor Emisi (kg CO2e/kg)": 1.990, "Satuan": "kg"}
             ])
         return version_str, df_out
-    except Exception as e:
+    except Exception:
         return "Educational (V5.0) - Jun 2026", pd.DataFrame([
             {"Kategori": "Concrete", "Nama Material": "Beton Standard", "Faktor Emisi (kg CO2e/kg)": 0.134, "Satuan": "kg"}
         ])
@@ -1479,6 +1479,77 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
         tab_a, tab_b = st.tabs(["📊 Visualisasi Grafik & Distribusi Emisi", "📄 Tabel Data Rinci & Ekspor Laporan"])
 
         with tab_a:
+            # BARIS 1: GAUGE METER & WATERFALL CHART
+            col_g_top1, col_g_top2 = st.columns(2)
+            
+            with col_g_top1:
+                gauge_max = max(100, math.ceil(total_project_emission_ton * 1.2))
+                fig_gauge = go.Figure(go.Indicator(
+                    mode="gauge+number",
+                    value=total_project_emission_ton,
+                    number={'suffix': " Ton CO2e", 'font': {'size': 24, 'family': "Plus Jakarta Sans"}},
+                    title={'text': "<b>Status Ambang Batas Emisi Proyek</b>", 'font': {'size': 15, 'family': "Plus Jakarta Sans"}},
+                    gauge={
+                        'axis': {'range': [0, gauge_max], 'tickwidth': 1, 'tickcolor': "#475569"},
+                        'bar': {'color': "#0f172a"},
+                        'bgcolor': "white",
+                        'borderwidth': 2,
+                        'bordercolor': "#e2e8f0",
+                        'steps': [
+                            {'range': [0, 10], 'color': "#d1fae5"},
+                            {'range': [10, 50], 'color': "#fef3c7"},
+                            {'range': [50, gauge_max], 'color': "#fee2e2"}
+                        ],
+                        'threshold': {
+                            'line': {'color': "#ef4444", 'width': 4},
+                            'thickness': 0.75,
+                            'value': total_project_emission_ton
+                        }
+                    }
+                ))
+                fig_gauge.update_layout(
+                    font_family="Plus Jakarta Sans",
+                    margin=dict(t=50, b=20, l=30, r=30),
+                    height=300
+                )
+                st.plotly_chart(fig_gauge, use_container_width=True)
+
+            with col_g_top2:
+                mat_em_ton = total_mat_emission_kg / 1000
+                log_em_ton = transport_emission_kg / 1000
+                eq_em_ton = equipment_emission_kg / 1000
+                
+                fig_waterfall = go.Figure(go.Waterfall(
+                    name="Akumulasi Emisi",
+                    orientation="v",
+                    measure=["relative", "relative", "relative", "total"],
+                    x=["Material (A1-A3)", "Logistik (A4)", "Alat Berat (A5)", "Total Proyek"],
+                    textposition="outside",
+                    text=[
+                        f"{mat_em_ton:,.2f} Ton",
+                        f"{log_em_ton:,.2f} Ton",
+                        f"{eq_em_ton:,.2f} Ton",
+                        f"{total_project_emission_ton:,.2f} Ton"
+                    ],
+                    y=[mat_em_ton, log_em_ton, eq_em_ton, 0],
+                    connector={"line": {"color": "#94a3b8", "width": 2, "dash": "dot"}},
+                    decreasing={"marker": {"color": "#10b981"}},
+                    increasing={"marker": {"color": "#0284c7"}},
+                    totals={"marker": {"color": "#064e3b"}}
+                ))
+                fig_waterfall.update_layout(
+                    title="<b>Akumulasi Emisi Karbon (Waterfall Chart)</b>",
+                    font_family="Plus Jakarta Sans",
+                    margin=dict(t=50, b=20, l=20, r=20),
+                    yaxis_title="Emisi (Ton CO2e)",
+                    showlegend=False,
+                    height=300
+                )
+                st.plotly_chart(fig_waterfall, use_container_width=True)
+
+            st.markdown("---")
+
+            # BARIS 2: PIE CHART & BAR CHART KONTRIBUSI
             col_g1, col_g2 = st.columns(2)
             with col_g1:
                 fig_pie = px.pie(

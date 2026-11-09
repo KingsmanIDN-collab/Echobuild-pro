@@ -6,10 +6,11 @@ import os
 import base64
 import json
 import io
+import math
 import warnings
 warnings.filterwarnings('ignore')
 
-# Penanganan opsional untuk ReportLab
+# Penanganan opsional untuk ReportLab (PDF)
 try:
     from reportlab.lib.pagesizes import letter
     from reportlab.lib import colors
@@ -18,6 +19,15 @@ try:
     HAS_REPORTLAB = True
 except ImportError:
     HAS_REPORTLAB = False
+
+# Penanganan opsional untuk openpyxl (Excel)
+try:
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+    HAS_OPENPYXL = True
+except ImportError:
+    HAS_OPENPYXL = False
 
 # ==========================================
 # 1. KONFIGURASI HALAMAN & EXECUTIVE DESIGN SYSTEM
@@ -106,15 +116,11 @@ st.markdown(f"""
         color: var(--color-slate-800);
     }}
     
-    /* Top Main App Padding & Spacing */
     .block-container {{
         padding-top: 2rem !important;
         padding-bottom: 3.5rem !important;
     }}
 
-    /* ==========================================
-       HERO BANNER (EKSEKUTIF)
-       ========================================== */
     .hero-container {{
         position: relative;
         background: linear-gradient(135deg, rgba(6, 78, 59, 0.94) 0%, rgba(15, 23, 42, 0.92) 100%), 
@@ -180,9 +186,6 @@ st.markdown(f"""
         gap: 6px;
     }}
 
-    /* ==========================================
-       KARTU MATRIKS EMISI (EXECUTIVE KPI CARDS)
-       ========================================== */
     .exec-metrics-grid {{
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -209,7 +212,6 @@ st.markdown(f"""
         box-shadow: 0 20px 30px -10px rgba(15, 23, 42, 0.12), 0 10px 10px -5px rgba(15, 23, 42, 0.04);
     }}
 
-    /* Variasi Warna Status Emisi */
     .exec-metric-card.status-optimal {{
         border-top: 5px solid var(--color-emerald-500);
         background: linear-gradient(180deg, #ffffff 0%, var(--color-emerald-50) 100%);
@@ -329,7 +331,6 @@ st.markdown(f"""
         padding-top: 10px;
     }}
 
-    /* Streamlit Native Metric Styling */
     div[data-testid="stMetric"] {{
         background: #ffffff;
         border: 1px solid var(--color-slate-200);
@@ -356,9 +357,6 @@ st.markdown(f"""
         color: var(--color-slate-900) !important;
     }}
 
-    /* ==========================================
-       SIDEBAR EKSEKUTIF YANG MENARIK & MODERN
-       ========================================== */
     section[data-testid="stSidebar"] {{
         background: linear-gradient(180deg, #091319 0%, #0d1e27 60%, #081116 100%) !important;
         border-right: 1px solid rgba(255, 255, 255, 0.09) !important;
@@ -414,7 +412,6 @@ st.markdown(f"""
         gap: 6px;
     }}
     
-    /* Navigation Radio Items Styling */
     div[data-testid="stRadio"] > div {{
         gap: 6px;
     }}
@@ -465,9 +462,6 @@ st.markdown(f"""
         margin-top: 18px;
     }}
 
-    /* ==========================================
-       MATERIAL INPUT FORM CARD & LAYOUT
-       ========================================== */
     .mat-card-header-bar {{
         background: #f8fafc;
         border: 1px solid var(--color-slate-200);
@@ -507,7 +501,6 @@ st.markdown(f"""
         font-size: 0.82rem;
     }}
 
-    /* Executive Buttons & Elements */
     .stButton > button {{
         border-radius: 12px !important;
         font-weight: 600 !important;
@@ -520,7 +513,6 @@ st.markdown(f"""
         box-shadow: 0 6px 12px rgba(0,0,0,0.08) !important;
     }}
     
-    /* Tabs Navigation */
     button[data-baseweb="tab"] {{
         border-radius: 8px 8px 0 0 !important;
         font-weight: 700 !important;
@@ -576,7 +568,6 @@ def load_ice_excel_database():
                 
             first_val = str(valid_vals[0]).strip()
             
-            # Deteksi Kategori
             if len(valid_vals) == 1 and not first_val.startswith("http") and not first_val.startswith("Module") and not first_val.startswith("Note"):
                 current_cat = first_val
                 continue
@@ -628,7 +619,7 @@ if "fuel_liter" not in st.session_state:
     st.session_state["fuel_liter"] = 100.0
 
 # ==========================================
-# 3. HELPER GENERATOR LAPORAN PDF
+# 3. HELPER GENERATOR LAPORAN PDF & EXCEL
 # ==========================================
 def generate_pdf_report(df_results, total_emission_ton, total_cost, cost_per_ton, transport_emission_kg, equipment_emission_kg, ice_ver):
     if not HAS_REPORTLAB:
@@ -700,6 +691,125 @@ def generate_pdf_report(df_results, total_emission_ton, total_cost, cost_per_ton
     buffer.seek(0)
     return buffer.getvalue()
 
+def generate_excel_report(df_results, total_emission_ton, total_cost, cost_per_ton, transport_emission_kg, equipment_emission_kg, ice_ver):
+    if not HAS_OPENPYXL:
+        return b""
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Laporan Emisi & Biaya"
+    ws.views.sheetView[0].showGridLines = True
+
+    header_fill = PatternFill(start_color="064E3B", end_color="064E3B", fill_type="solid")
+    accent_fill = PatternFill(start_color="ECFDF5", end_color="ECFDF5", fill_type="solid")
+    title_font = Font(name="Calibri", size=14, bold=True, color="064E3B")
+    header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+    bold_font = Font(name="Calibri", size=11, bold=True)
+    regular_font = Font(name="Calibri", size=11)
+    
+    thin_border = Border(
+        left=Side(style='thin', color='E2E8F0'),
+        right=Side(style='thin', color='E2E8F0'),
+        top=Side(style='thin', color='E2E8F0'),
+        bottom=Side(style='thin', color='E2E8F0')
+    )
+
+    ws['A1'] = "EcoBuild Pro v2.0 - Laporan Analisis Emisi Karbon & Biaya Proyek"
+    ws['A1'].font = title_font
+    ws['A2'] = f"Basis Data: ICE Database {ice_ver} | Standar Evaluasi: BS EN 15978 (A1-A5)"
+    ws['A2'].font = Font(name="Calibri", size=10, italic=True, color="475569")
+
+    ws['A4'] = "RINGKASAN EKSEKUTIF PROYEK"
+    ws['A4'].font = bold_font
+    
+    kpi_headers = ["Parameter Analisis", "Nilai Output Proyek"]
+    for col_idx, text in enumerate(kpi_headers, 1):
+        cell = ws.cell(row=5, column=col_idx, value=text)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="left", vertical="center")
+
+    kpis = [
+        ("Total Emisi Karbon Proyek", total_emission_ton, r'0.00 "Ton CO2e"'),
+        ("Total Estimasi Biaya Material", total_cost, r'"Rp "#,##0'),
+        ("Rasio Biaya / Emisi Karbon", cost_per_ton, r'"Rp "#,##0 "/ Ton CO2e"'),
+        ("Emisi Pengangkutan Logistik (A4)", transport_emission_kg / 1000, r'0.00 "Ton CO2e"'),
+        ("Emisi BBM Alat Berat (A5)", equipment_emission_kg / 1000, r'0.00 "Ton CO2e"')
+    ]
+
+    for row_idx, (label, val, num_fmt) in enumerate(kpis, 6):
+        c1 = ws.cell(row=row_idx, column=1, value=label)
+        c2 = ws.cell(row=row_idx, column=2, value=val)
+        c1.font = regular_font
+        c2.font = bold_font
+        c1.border = thin_border
+        c2.border = thin_border
+        c2.number_format = num_fmt
+        c1.fill = accent_fill
+        c2.fill = accent_fill
+
+    start_row = 12
+    ws.cell(row=start_row, column=1, value="RINCIAN MATERIAL PROYEK & FAKTOR EMISI").font = bold_font
+    
+    mat_headers = ["No", "Material", "Jumlah / Volume", "Satuan", "Faktor Emisi (kg CO2e/unit)", "Total Emisi (kg CO2e)", "Total Biaya (Rp)"]
+    for col_idx, text in enumerate(mat_headers, 1):
+        cell = ws.cell(row=start_row+1, column=col_idx, value=text)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    curr_row = start_row + 2
+    for idx, row in df_results.iterrows():
+        ws.cell(row=curr_row, column=1, value=idx+1).alignment = Alignment(horizontal="center")
+        ws.cell(row=curr_row, column=2, value=str(row['Material']))
+        
+        c_qty = ws.cell(row=curr_row, column=3, value=float(row['Jumlah']))
+        c_qty.number_format = "#,##0.00"
+        
+        ws.cell(row=curr_row, column=4, value=str(row['Satuan'])).alignment = Alignment(horizontal="center")
+        
+        fe = float(row['Emisi (kg CO2e)']) / float(row['Jumlah']) if float(row['Jumlah']) > 0 else 0
+        c_fe = ws.cell(row=curr_row, column=5, value=fe)
+        c_fe.number_format = "0.000000"
+        
+        c_e = ws.cell(row=curr_row, column=6, value=float(row['Emisi (kg CO2e)']))
+        c_e.number_format = "#,##0.00"
+        
+        c_c = ws.cell(row=curr_row, column=7, value=float(row['Biaya (Rp)']))
+        c_c.number_format = r'"Rp "#,##0'
+        
+        for col_idx in range(1, 8):
+            cell = ws.cell(row=curr_row, column=col_idx)
+            cell.font = regular_font
+            cell.border = thin_border
+            
+        curr_row += 1
+
+    tot_row = curr_row
+    ws.cell(row=tot_row, column=1, value="TOTAL MATERIAL").font = bold_font
+    ws.cell(row=tot_row, column=1).alignment = Alignment(horizontal="center")
+    
+    c_tot_e = ws.cell(row=tot_row, column=6, value=f"=SUM(F{start_row+2}:F{tot_row-1})")
+    c_tot_e.font = bold_font
+    c_tot_e.number_format = "#,##0.00"
+    
+    c_tot_c = ws.cell(row=tot_row, column=7, value=f"=SUM(G{start_row+2}:G{tot_row-1})")
+    c_tot_c.font = bold_font
+    c_tot_c.number_format = r'"Rp "#,##0'
+
+    for col_idx in range(1, 8):
+        cell = ws.cell(row=tot_row, column=col_idx)
+        cell.border = thin_border
+        cell.fill = accent_fill
+
+    for col in ws.columns:
+        max_len = max(len(str(cell.value or '')) for cell in col)
+        col_letter = get_column_letter(col[0].column)
+        ws.column_dimensions[col_letter].width = max(max_len + 3, 14)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
 # ==========================================
 # 4. SIDEBAR NAVIGASI & EXECUTIVE BRANDING
 # ==========================================
@@ -713,7 +823,6 @@ logo_path = get_existing_image(["logo_kingsman.png", "logo_kingsman.jpg", "logo.
 logo_base64 = get_image_base64(logo_path)
 
 with st.sidebar:
-    # 1. Executive Brand Box
     if logo_base64:
         logo_html = f'<img src="{logo_base64}" class="sidebar-logo-img" alt="Kingsman Logo" />'
     else:
@@ -728,7 +837,6 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     
-    # 2. Navigasi Menu
     st.markdown('<div class="sidebar-nav-label">🧭 Navigasi Utama</div>', unsafe_allow_html=True)
     menu = st.radio(
         "Pilih Menu Utama:",
@@ -737,7 +845,6 @@ with st.sidebar:
         label_visibility="collapsed"
     )
 
-    # 3. Status Engine & Database
     st.markdown(f"""
     <div class="sidebar-status-box">
         <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #38bdf8; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
@@ -762,7 +869,6 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    # 4. Box Dosen Pengampu & Pengesahan Akademik
     accreditation_card_html = (
         '<div class="sidebar-accreditation">'
         '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">'
@@ -779,7 +885,6 @@ with st.sidebar:
     )
     st.markdown(accreditation_card_html, unsafe_allow_html=True)
 
-    # 5. Footer Sidebar
     st.markdown("""
     <div style="text-align: center; margin-top: 24px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.73rem; color: #94a3b8;">
         Dikembangkan oleh <b>CV Kingsman IDN</b><br>
@@ -979,7 +1084,6 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
 
     st.markdown("---")
     
-    # Callback fungsi kontrol baris & preset
     def cb_add_row():
         curr = int(st.session_state.get("input_num_items", st.session_state.get("calc_num_items", 3)))
         nxt = min(30, curr + 1)
@@ -1018,11 +1122,9 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
         st.session_state["p_val_2"] = 1800.0
         st.session_state["q_val_2"] = 8000.0
 
-    # Inisialisasi awal key input_num_items jika belum ada
     if "input_num_items" not in st.session_state:
         st.session_state["input_num_items"] = int(st.session_state.get("calc_num_items", 3))
 
-    # KONTROL JUMLAH & PRESET CEPAT
     col_cnt1, col_cnt2, col_cnt3, col_cnt4 = st.columns([1.4, 0.9, 0.9, 1.3])
     with col_cnt1:
         num_items = st.number_input(
@@ -1060,13 +1162,11 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
     total_mat_emission_kg = 0
     total_mat_cost = 0
 
-    # LOOP FORM INPUT MATERIAL DENGAN LAYOUT RAPI & EXECUTIVE
     for i in range(num_items):
         def_idx = (i + 1) if (i + 1) < len(all_mat_options) else 0
         curr_selection = st.session_state.get(f"calc_sel_{i}", all_mat_options[def_idx])
         is_custom = (curr_selection == "➕ Material Kustom (Isi Sendiri)")
         
-        # Header Kartu Item Material
         st.markdown(f"""
         <div class="mat-card-header-bar">
             <div style="display: flex; align-items: center; gap: 10px;">
@@ -1085,7 +1185,6 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
         """, unsafe_allow_html=True)
 
         with st.container():
-            # Step 1: Pilihan Material (Full Width)
             sel_mat = st.selectbox(
                 f"Pilih Sumber & Nama Material #{i+1}:",
                 options=all_mat_options,
@@ -1094,7 +1193,6 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
                 help="Gunakan pencarian untuk memilih material dari Circular Ecology ICE Database atau pilih Material Kustom."
             )
 
-            # Step 2: Form Parameter Tertata Rapi
             if sel_mat != "➕ Material Kustom (Isi Sendiri)":
                 mat_match = df_ice_materials[df_ice_materials["Nama Material"] == sel_mat]
                 if not mat_match.empty:
@@ -1175,7 +1273,6 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
                         key=f"c_qty_{i}"
                     )
 
-            # Kalkulasi Real-time Item
             e_kg = qty_val * factor_val
             c_rp = qty_val * price_val
             if qty_val > 0:
@@ -1189,7 +1286,6 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
                 total_mat_emission_kg += e_kg
                 total_mat_cost += c_rp
 
-            # Real-time Subtotal Pill
             st.markdown(f"""
             <div class="mat-subtotal-pill">
                 <div style="color: #475569;">
@@ -1203,7 +1299,6 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
             
             st.markdown("<div style='margin-bottom: 22px;'></div>", unsafe_allow_html=True)
 
-    # SEKSI EMISI LOGISTIK & ALAT BERAT
     st.markdown("---")
     st.subheader("🚚 Pengangkutan Logistik & BBM Alat Berat (Modul A4 - A5)")
     st.caption("Hitung emisi transportasi logistik dari pabrik/kuari ke proyek serta konsumsi solar alat berat di lapangan.")
@@ -1235,16 +1330,11 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
     total_project_emission_ton = total_project_emission_kg / 1000
     cost_per_ton = (total_mat_cost / total_project_emission_ton) if total_project_emission_ton > 0 else 0
 
-    # ==========================================
-    # KARTU MATRIKS EMISI (BORDER SHADOW & STATUS COLORS)
-    # ==========================================
     st.markdown("---")
     st.subheader("📊 Executive Carbon & Cost Intelligence Scorecard")
 
-    # Buat 3 Kolom
     col_sc1, col_sc2, col_sc3 = st.columns(3)
 
-    # 🟢 KARTU 1: TOTAL EMISI KARBON
     with col_sc1:
         status_class = "status-optimal" if total_project_emission_ton < 10 else ("status-moderate" if total_project_emission_ton < 50 else "status-critical")
         status_label = "STATUS OPTIMAL" if total_project_emission_ton < 10 else ("PERHATIAN" if total_project_emission_ton < 50 else "TINGGI")
@@ -1270,7 +1360,6 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
         </div>
         """, unsafe_allow_html=True)
 
-    # 🔵 KARTU 2: ESTIMASI BIAYA MATERIAL
     with col_sc2:
         st.markdown(f"""
         <div class="exec-metric-card theme-finance">
@@ -1292,7 +1381,6 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
         </div>
         """, unsafe_allow_html=True)
 
-    # 🟣 KARTU 3: RASIO BIAYA / EMISI
     with col_sc3:
         st.markdown(f"""
         <div class="exec-metric-card theme-efficiency">
@@ -1314,15 +1402,11 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("---")
-    # ==========================================
-    # MODUL KALKULATOR CARBON OFFSET & AKSI HIJAU
-    # ==========================================
+    # MODUL CARBON OFFSET & REKOMENDASI AKSI HIJAU
     st.markdown("<br>", unsafe_allow_html=True)
     st.subheader("🌱 Skenario Carbon Offset (Target 10 Tahun)")
     st.caption("Estimasi penyerapan emisi proyek melalui penanaman pohon kompensasi karbon serta rekomendasi mitigasi teknis.")
 
-    import math
     trees_trembesi = math.ceil(total_project_emission_kg / 285) if total_project_emission_kg > 0 else 0
     trees_mahoni = math.ceil(total_project_emission_kg / 140) if total_project_emission_kg > 0 else 0
 
@@ -1389,7 +1473,7 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
         """)
 
     st.markdown("---")
-    # TABEL & GRAFIK HASIL PERHITUNGAN
+
     if results:
         df = pd.DataFrame(results)
         tab_a, tab_b = st.tabs(["📊 Visualisasi Grafik & Distribusi Emisi", "📄 Tabel Data Rinci & Ekspor Laporan"])
@@ -1448,11 +1532,12 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
                 }
             )
             
-            col_d1, col_d2 = st.columns(2)
+            col_d1, col_d2, col_d3 = st.columns(3)
+            
             with col_d1:
                 csv_data = df.to_csv(index=False).encode('utf-8')
                 st.download_button(
-                    label="📥 Download Data Perhitungan (CSV)",
+                    label="📥 Download Data (CSV)",
                     data=csv_data,
                     file_name="Laporan_Emisi_EcoBuild.csv",
                     mime="text/csv",
@@ -1460,6 +1545,32 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
                 )
             
             with col_d2:
+                if HAS_OPENPYXL:
+                    excel_bytes = generate_excel_report(
+                        df_results=df,
+                        total_emission_ton=total_project_emission_ton,
+                        total_cost=total_mat_cost,
+                        cost_per_ton=cost_per_ton,
+                        transport_emission_kg=transport_emission_kg,
+                        equipment_emission_kg=equipment_emission_kg,
+                        ice_ver=ice_version
+                    )
+                    st.download_button(
+                        label="📊 Download Laporan Excel (.xlsx)",
+                        data=excel_bytes,
+                        file_name="Laporan_Resmi_EcoBuild_Pro.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True
+                    )
+                else:
+                    st.button(
+                        "📊 Download Laporan Excel (.xlsx)",
+                        disabled=True,
+                        use_container_width=True,
+                        help="Modul openpyxl belum terpasang di sistem python."
+                    )
+            
+            with col_d3:
                 if HAS_REPORTLAB:
                     pdf_bytes = generate_pdf_report(
                         df_results=df,
@@ -1587,7 +1698,6 @@ elif menu == "⚖️ Simulasi Komparasi Desain":
     delta_cost = cost_b - cost_a
     hemat_biaya_pct = ((cost_a - cost_b) / cost_a * 100) if cost_a > 0 else 0
 
-    # Executive Komparasi Metric Cards
     col_c1, col_c2, col_c3 = st.columns(3)
     
     with col_c1:

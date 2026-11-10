@@ -1001,7 +1001,7 @@ if menu == "🏠 Beranda":
         st.write("""
         Industri konstruksi dan teknik sipil bertanggung jawab atas **hampir 40% emisi gas rumah kaca global**. 
         Emisi tidak hanya berasal dari pemakaian listrik saat gedung beroperasi (*Operational Carbon*), tetapi juga sejak 
-        proses ekstraksi bahan mentah, pengangkutan logistik, hingga konsumsi BBM alat-berat di lapangan (*Embodied & Construction Carbon*).
+        proses ekstraksi bahan mentah, pengangkutan logistik, hingga konsumsi BBM alat berat di lapangan (*Embodied & Construction Carbon*).
         
         **EcoBuild Pro** hadir sebagai *software* berbasis data untuk menghitung dampak karbon secara komprehensif, 
         menguji efisiensi biaya, serta membandingkan alternatif material ramah lingkungan secara interaktif.
@@ -1085,7 +1085,7 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
     st.write(f"Mode Bahasa Aktif: **{st.session_state['app_lang']}**. Hitung emisi dan biaya proyek dengan memilih material dari **ICE Database** atau mengisi **Material Kustom** secara bebas.")
 
     # ---------------------------------------------------------
-    # TAHAP 1: PRESET TEMPLATE RAB PROYEK TIPIKAL (QUICK-START)
+    # PRESET TEMPLATE RAB PROYEK TIPIKAL (QUICK-START)
     # ---------------------------------------------------------
     st.markdown("### ⚡ Quick-Start: Pilih Template RAB Tipikal Proyek")
     st.caption("Pilih template proyek di bawah ini untuk mengisi formulir material secara otomatis tanpa perlu mengetik satu per satu:")
@@ -1204,5 +1204,845 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
                                 mat_v_low = mat_v.lower()
                                 if "Faktor Emisi" in col_map and pd.notna(row[col_map["Faktor Emisi"]]):
                                     fe_v = float(pd.to_numeric(row[col_map["Faktor Emisi"]], errors='coerce') or 1.0)
-                                elif mat_v_low in ice_lookup:
-                                    fe_v = ice_lookup[mat_v_low]
+                                else:
+                                    fe_v = ice_lookup.get(mat_v_low, 1.0)
+
+                                if "Harga Satuan" in col_map and pd.notna(row[col_map["Harga Satuan"]]):
+                                    hrg_v = float(pd.to_numeric(row[col_map["Harga Satuan"]], errors='coerce') or 10000.0)
+                                else:
+                                    hrg_v = 15000.0 if mat_v_low in ice_lookup else 10000.0
+
+                                st.session_state[f"calc_sel_{idx}"] = "➕ Material Kustom (Isi Sendiri)"
+                                st.session_state[f"c_name_{idx}"] = mat_v
+                                st.session_state[f"c_unit_{idx}"] = sat_v
+                                st.session_state[f"c_fact_{idx}"] = fe_v
+                                st.session_state[f"c_price_{idx}"] = hrg_v
+                                st.session_state[f"c_qty_{idx}"] = qty_v
+                            
+                            st.session_state["last_uploaded_rab_id"] = file_id
+                            st.success(f"✅ Berhasil mengimpor {num_r} item material secara presisi!")
+                            st.rerun()
+                        else:
+                            st.error("File RAB wajib memiliki minimal kolom 'Material' dan 'Jumlah'.")
+                    except Exception as e:
+                        st.error(f"Gagal membaca file RAB: {e}")
+
+        with c_exp2:
+            st.subheader("💾 Backup Draft Proyek (JSON)")
+            save_data = {
+                "calc_num_items": st.session_state.get("calc_num_items", 3),
+                "dist_km": st.session_state["dist_km"],
+                "fuel_liter": st.session_state["fuel_liter"]
+            }
+            st.download_button(
+                label="📥 Export Draft Proyek (JSON)",
+                data=json.dumps(save_data, indent=2),
+                file_name="draft_proyek_ecobuild.json",
+                mime="application/json",
+                use_container_width=True
+            )
+
+    st.markdown("---")
+    
+    def cb_add_row():
+        curr = int(st.session_state.get("input_num_items", st.session_state.get("calc_num_items", 3)))
+        nxt = min(30, curr + 1)
+        st.session_state["input_num_items"] = nxt
+        st.session_state["calc_num_items"] = nxt
+
+    def cb_remove_row():
+        curr = int(st.session_state.get("input_num_items", st.session_state.get("calc_num_items", 3)))
+        nxt = max(1, curr - 1)
+        st.session_state["input_num_items"] = nxt
+        st.session_state["calc_num_items"] = nxt
+
+    if "input_num_items" not in st.session_state:
+        st.session_state["input_num_items"] = int(st.session_state.get("calc_num_items", 3))
+
+    col_cnt1, col_cnt2, col_cnt3 = st.columns([1.8, 1, 1])
+    with col_cnt1:
+        num_items = st.number_input(
+            "🔢 Jumlah Jenis Material (Form Input):",
+            min_value=1,
+            max_value=30,
+            step=1,
+            key="input_num_items"
+        )
+        st.session_state["calc_num_items"] = num_items
+        
+    with col_cnt2:
+        st.write("")
+        st.write("")
+        st.button("➕ Tambah Baris", use_container_width=True, on_click=cb_add_row)
+            
+    with col_cnt3:
+        st.write("")
+        st.write("")
+        st.button("➖ Kurangi Baris", use_container_width=True, on_click=cb_remove_row)
+
+    ice_mat_names = get_active_material_options(df_ice_materials, st.session_state["app_lang"])
+    all_mat_options = ["➕ Material Kustom (Isi Sendiri)"] + ice_mat_names
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.subheader("📦 Formulir Input Material Struktur Proyek")
+    st.caption(f"Tampilan pilihan material menyesuaikan dengan bahasa aktif: **{st.session_state['app_lang']}**.")
+    
+    results = []
+    total_mat_emission_kg = 0
+    total_mat_cost = 0
+
+    for i in range(num_items):
+        def_idx = (i + 1) if (i + 1) < len(all_mat_options) else 0
+        curr_selection = st.session_state.get(f"calc_sel_{i}", all_mat_options[def_idx])
+        is_custom = (curr_selection == "➕ Material Kustom (Isi Sendiri)")
+        
+        st.markdown(f"""
+        <div class="mat-card-header-bar">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="mat-card-pill">ITEM #{i+1}</span>
+                <span style="font-weight: 700; color: #1e293b; font-size: 0.95rem;">
+                    {'Material Kustom' if is_custom else str(curr_selection)[:55] + ('...' if len(str(curr_selection)) > 55 else '')}
+                </span>
+            </div>
+            <span style="font-size: 0.74rem; font-weight: 700; padding: 3px 10px; border-radius: 6px; 
+                         background: {'#fef3c7' if is_custom else '#e0f2fe'}; 
+                         color: {'#92400e' if is_custom else '#0369a1'}; 
+                         border: 1px solid {'#fde68a' if is_custom else '#bae6fd'};">
+                {'🛠️ KUSTOM MANUAL' if is_custom else '📦 DATABASE ICE'}
+            </span>
+        </div>
+        """, unsafe_allow_html=True)
+
+        with st.container():
+            sel_mat = st.selectbox(
+                f"Pilih Sumber & Nama Material #{i+1}:",
+                options=all_mat_options,
+                index=def_idx if curr_selection not in all_mat_options else all_mat_options.index(curr_selection),
+                key=f"calc_sel_{i}"
+            )
+
+            if sel_mat != "➕ Material Kustom (Isi Sendiri)":
+                mat_match = df_ice_materials[
+                    (df_ice_materials["Nama Material (ID)"] == sel_mat) |
+                    (df_ice_materials["Nama Material (EN)"] == sel_mat) |
+                    (df_ice_materials["Nama Material (Bilingual)"] == sel_mat)
+                ]
+                
+                if not mat_match.empty:
+                    mat_info = mat_match.iloc[0]
+                else:
+                    mat_info = {
+                        "Satuan": "kg", 
+                        "Faktor Emisi (kg CO2e/kg)": 0.134, 
+                        "Kategori (ID)": "Material Umum",
+                        "Nama Material (ID)": sel_mat
+                    }
+                    
+                mat_name = sel_mat
+                unit_str = mat_info["Satuan"]
+                factor_val = float(mat_info["Faktor Emisi (kg CO2e/kg)"])
+                cat_name = mat_info.get("Kategori (ID)" if "Indonesia" in st.session_state["app_lang"] else "Kategori (EN)", "Material Umum")
+                
+                c_m1, c_m2, c_m3 = st.columns([1.2, 1, 1])
+                with c_m1:
+                    st.markdown(f"""
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; min-height: 72px; display: flex; flex-direction: column; justify-content: center;">
+                        <div style="font-size: 0.70rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Faktor Emisi ICE ({unit_str})</div>
+                        <div style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin-top: 2px;">
+                            {factor_val:.6f} <span style="font-size: 0.72rem; color: #10b981; font-weight: 600;">kg CO2e/{unit_str}</span>
+                        </div>
+                        <div style="font-size: 0.70rem; color: #94a3b8; margin-top: 2px;">Kat: {cat_name[:30]}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with c_m2:
+                    price_val = st.number_input(
+                        f"Harga Satuan (Rp/{unit_str}) #{i+1}:",
+                        min_value=0.0,
+                        value=float(st.session_state.get(f"p_val_{i}", 15000.0)),
+                        step=1000.0,
+                        key=f"p_val_{i}"
+                    )
+                with c_m3:
+                    qty_val = st.number_input(
+                        f"Volume Kebutuhan ({unit_str}) #{i+1}:",
+                        min_value=0.0,
+                        value=float(st.session_state.get(f"q_val_{i}", 0.0)),
+                        step=50.0,
+                        key=f"q_val_{i}"
+                    )
+            else:
+                c_c1, c_c2 = st.columns([2.5, 1])
+                with c_c1:
+                    mat_name = st.text_input(
+                        f"Nama Material Kustom #{i+1}:",
+                        value=st.session_state.get(f"c_name_{i}", f"Material Kustom {i+1}"),
+                        key=f"c_name_{i}"
+                    )
+                with c_c2:
+                    unit_str = st.text_input(
+                        f"Satuan (kg/m3/ton) #{i+1}:",
+                        value=st.session_state.get(f"c_unit_{i}", "kg"),
+                        key=f"c_unit_{i}"
+                    )
+                    
+                c_c3, c_c4, c_c5 = st.columns([1, 1, 1])
+                with c_c3:
+                    factor_val = st.number_input(
+                        f"Faktor Emisi (kg CO2e/{unit_str}):",
+                        min_value=0.0,
+                        value=float(st.session_state.get(f"c_fact_{i}", 1.0)),
+                        step=0.05,
+                        key=f"c_fact_{i}"
+                    )
+                with c_c4:
+                    price_val = st.number_input(
+                        f"Harga Satuan (Rp/{unit_str}):",
+                        min_value=0.0,
+                        value=float(st.session_state.get(f"c_price_{i}", 10000.0)),
+                        step=1000.0,
+                        key=f"c_price_{i}"
+                    )
+                with c_c5:
+                    qty_val = st.number_input(
+                        f"Volume Kebutuhan ({unit_str}):",
+                        min_value=0.0,
+                        value=float(st.session_state.get(f"c_qty_{i}", 0.0)),
+                        step=10.0,
+                        key=f"c_qty_{i}"
+                    )
+
+            e_kg = qty_val * factor_val
+            c_rp = qty_val * price_val
+            if qty_val > 0:
+                results.append({
+                    "Material": mat_name,
+                    "Jumlah": qty_val,
+                    "Satuan": unit_str,
+                    "Emisi (kg CO2e)": e_kg,
+                    "Biaya (Rp)": c_rp
+                })
+                total_mat_emission_kg += e_kg
+                total_mat_cost += c_rp
+
+            st.markdown(f"""
+            <div class="mat-subtotal-pill">
+                <div style="color: #475569;">
+                    🌿 <b>Emisi Item:</b> <span style="color: {'#059669' if e_kg > 0 else '#94a3b8'}; font-weight: 700;">{e_kg:,.2f} kg CO2e</span> ({e_kg/1000:,.3f} Ton)
+                </div>
+                <div style="color: #475569;">
+                    💰 <b>Subtotal Biaya:</b> <span style="color: {'#0284c7' if c_rp > 0 else '#94a3b8'}; font-weight: 700;">Rp {c_rp:,.0f}</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("<div style='margin-bottom: 22px;'></div>", unsafe_allow_html=True)
+
+    st.markdown("---")
+    
+    # ---------------------------------------------------------
+    # PRESETS ZONA JARAK LOGISTIK (MODUL A4)
+    # ---------------------------------------------------------
+    st.subheader("🚚 Pengangkutan Logistik & BBM Alat Berat (Modul A4 - A5)")
+    st.caption("Hitung emisi transportasi logistik dari pabrik/kuari ke lokasi proyek dengan memilih preset zona atau memasukkan kilometer manual.")
+    
+    c_trans1, c_trans2 = st.columns(2)
+    with c_trans1:
+        st.markdown("**1. Presets Zona Pengangkutan Logistik (A4):**")
+        zone_selected = st.radio(
+            "Pilih Zona Jarak Pemasok Material:",
+            [
+                "🟢 Zona Lokal (< 25 km)",
+                "🟡 Zona Regional (25 - 100 km)",
+                "🔴 Zona Jarak Jauh / Antar Pulau (100 - 500 km)",
+                "⚙️ Custom Kilometer (Manual)"
+            ],
+            key="dist_zone"
+        )
+        
+        if zone_selected == "🟢 Zona Lokal (< 25 km)":
+            dist_val = 15.0
+        elif zone_selected == "🟡 Zona Regional (25 - 100 km)":
+            dist_val = 55.0
+        elif zone_selected == "🔴 Zona Jarak Jauh / Antar Pulau (100 - 500 km)":
+            dist_val = 250.0
+        else:
+            dist_val = st.number_input(
+                "Jarak Kustom (km):", 
+                min_value=0.0, 
+                value=float(st.session_state.get("dist_km", 25.0)), 
+                step=5.0, 
+                key="manual_dist_km"
+            )
+            
+        st.session_state["dist_km"] = dist_val
+        st.info(f"📍 **Jarak Aktif Dihitung:** **{dist_val:,.1f} km** *(Estimasi emisi truk ~0.25 kg CO2e / ton-km)*")
+
+    with c_trans2:
+        st.markdown("**2. Konsumsi BBM Alat Berat di Tapak Proyek (A5):**")
+        st.session_state["fuel_liter"] = st.number_input(
+            "Konsumsi Solar Alat Berat (Liter):", 
+            min_value=0.0, 
+            value=float(st.session_state["fuel_liter"]), 
+            step=50.0, 
+            key="calc_fuel_liter",
+            help="Faktor emisi pembakaran solar industri ~ 2.68 kg CO2e / Liter diesel"
+        )
+        st.info(f"⛽ **Emisi Alat Berat:** **{st.session_state['fuel_liter'] * 2.68 / 1000:,.2f} Ton CO2e**")
+
+    transport_emission_kg = st.session_state["dist_km"] * 0.25 * 10
+    equipment_emission_kg = st.session_state["fuel_liter"] * 2.68
+    
+    total_project_emission_kg = total_mat_emission_kg + transport_emission_kg + equipment_emission_kg
+    total_project_emission_ton = total_project_emission_kg / 1000
+    cost_per_ton = (total_mat_cost / total_project_emission_ton) if total_project_emission_ton > 0 else 0
+
+    st.markdown("---")
+    st.subheader("📊 Executive Carbon & Cost Intelligence Scorecard")
+
+    col_sc1, col_sc2, col_sc3 = st.columns(3)
+
+    with col_sc1:
+        status_class = "status-optimal" if total_project_emission_ton < 10 else ("status-moderate" if total_project_emission_ton < 50 else "status-critical")
+        status_label = "STATUS OPTIMAL" if total_project_emission_ton < 10 else ("PERHATIAN" if total_project_emission_ton < 50 else "TINGGI")
+        pill_class = "pill-optimal" if total_project_emission_ton < 10 else ("pill-moderate" if total_project_emission_ton < 50 else "pill-critical")
+        
+        st.markdown(f"""
+        <div class="exec-metric-card {status_class}">
+            <div>
+                <div class="exec-card-head">
+                    <div class="exec-card-title-group">
+                        <span class="exec-card-icon">🌍</span>
+                        <span class="exec-card-title">Total Emisi Karbon Proyek</span>
+                    </div>
+                    <span class="exec-status-pill {pill_class}">● {status_label}</span>
+                </div>
+                <div class="exec-card-value">
+                    {total_project_emission_ton:,.2f} <span class="exec-card-unit">Ton CO2e</span>
+                </div>
+            </div>
+            <div class="exec-card-subtext">
+                Akumulasi emisi material (A1-A3), logistik (A4), dan alat berat (A5).
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_sc2:
+        st.markdown(f"""
+        <div class="exec-metric-card theme-finance">
+            <div>
+                <div class="exec-card-head">
+                    <div class="exec-card-title-group">
+                        <span class="exec-card-icon">💰</span>
+                        <span class="exec-card-title">Total Estimasi Biaya</span>
+                    </div>
+                    <span class="exec-status-pill pill-finance">ANGGARAN</span>
+                </div>
+                <div class="exec-card-value">
+                    Rp {total_mat_cost:,.0f}
+                </div>
+            </div>
+            <div class="exec-card-subtext">
+                Estimasi belanja pengadaan {len(results)} jenis material struktur proyek.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_sc3:
+        st.markdown(f"""
+        <div class="exec-metric-card theme-efficiency">
+            <div>
+                <div class="exec-card-head">
+                    <div class="exec-card-title-group">
+                        <span class="exec-card-icon">⚖️</span>
+                        <span class="exec-card-title">Rasio Biaya / Emisi</span>
+                    </div>
+                    <span class="exec-status-pill pill-efficiency">INDEKS EFISIENSI</span>
+                </div>
+                <div class="exec-card-value">
+                    Rp {cost_per_ton:,.0f} <span class="exec-card-unit">/ Ton CO2e</span>
+                </div>
+            </div>
+            <div class="exec-card-subtext">
+                Biaya yang dikeluarkan per satu ton emisi karbon yang dihasilkan.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # MODUL CARBON OFFSET
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.subheader("🌱 Skenario Carbon Offset (Target 10 Tahun)")
+
+    trees_trembesi = math.ceil(total_project_emission_kg / 285) if total_project_emission_kg > 0 else 0
+    trees_mahoni = math.ceil(total_project_emission_kg / 140) if total_project_emission_kg > 0 else 0
+
+    col_off1, col_off2 = st.columns(2)
+
+    with col_off1:
+        st.markdown(f"""
+        <div style="background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%); border: 1px solid #a7f3d0; border-top: 5px solid #10b981; border-radius: 16px; padding: 20px 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.4rem;">🌳</span>
+                    <span style="font-size: 0.85rem; font-weight: 800; color: #064e3b; text-transform: uppercase;">Pohon Trembesi (Samanea saman)</span>
+                </div>
+                <span style="background: #d1fae5; color: #065f46; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px;">SERAPAN TINGGI</span>
+            </div>
+            <div style="font-size: 2.2rem; font-weight: 800; color: #064e3b; margin: 4px 0;">
+                {trees_trembesi:,} <span style="font-size: 1rem; font-weight: 600; color: #047857;">Batang Pohon</span>
+            </div>
+            <div style="font-size: 0.82rem; color: #047857; margin-top: 10px; border-top: 1px dashed #a7f3d0; padding-top: 10px;">
+                Dibutuhkan <b>{trees_trembesi:,} pohon Trembesi</b> untuk menyerap emisi <b>{total_project_emission_ton:,.2f} Ton CO2e</b> dalam 10 tahun.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_off2:
+        st.markdown(f"""
+        <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); border: 1px solid #bbf7d0; border-top: 5px solid #059669; border-radius: 16px; padding: 20px 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.4rem;">🌲</span>
+                    <span style="font-size: 0.85rem; font-weight: 800; color: #065f46; text-transform: uppercase;">Pohon Mahoni (Swietenia mahagoni)</span>
+                </div>
+                <span style="background: #dcfce7; color: #166534; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px;">STANDAR RTH</span>
+            </div>
+            <div style="font-size: 2.2rem; font-weight: 800; color: #065f46; margin: 4px 0;">
+                {trees_mahoni:,} <span style="font-size: 1rem; font-weight: 600; color: #059669;">Batang Pohon</span>
+            </div>
+            <div style="font-size: 0.82rem; color: #059669; margin-top: 10px; border-top: 1px dashed #bbf7d0; padding-top: 10px;">
+                Dibutuhkan <b>{trees_mahoni:,} pohon Mahoni</b> untuk menyerap emisi <b>{total_project_emission_ton:,.2f} Ton CO2e</b> dalam 10 tahun.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    if results:
+        df = pd.DataFrame(results)
+        tab_a, tab_b = st.tabs(["📊 Visualisasi Grafik & Distribusi Emisi", "📄 Tabel Data Rinci & Ekspor Laporan"])
+
+        with tab_a:
+            col_g_top1, col_g_top2 = st.columns(2)
+            
+            with col_g_top1:
+                gauge_max = max(100, math.ceil(total_project_emission_ton * 1.2))
+                fig_gauge = go.Figure(go.Indicator(
+                    mode="gauge+number",
+                    value=total_project_emission_ton,
+                    number={'suffix': " Ton CO2e", 'font': {'size': 24, 'family': "Plus Jakarta Sans"}},
+                    title={'text': "<b>Status Ambang Batas Emisi Proyek</b>", 'font': {'size': 15, 'family': "Plus Jakarta Sans"}},
+                    gauge={
+                        'axis': {'range': [0, gauge_max], 'tickwidth': 1, 'tickcolor': "#475569"},
+                        'bar': {'color': "#0f172a"},
+                        'bgcolor': "white",
+                        'borderwidth': 2,
+                        'bordercolor': "#e2e8f0",
+                        'steps': [
+                            {'range': [0, 10], 'color': "#d1fae5"},
+                            {'range': [10, 50], 'color': "#fef3c7"},
+                            {'range': [50, gauge_max], 'color': "#fee2e2"}
+                        ],
+                        'threshold': {
+                            'line': {'color': "#ef4444", 'width': 4},
+                            'thickness': 0.75,
+                            'value': total_project_emission_ton
+                        }
+                    }
+                ))
+                fig_gauge.update_layout(font_family="Plus Jakarta Sans", margin=dict(t=50, b=20, l=30, r=30), height=300)
+                st.plotly_chart(fig_gauge, use_container_width=True)
+
+            with col_g_top2:
+                mat_em_ton = total_mat_emission_kg / 1000
+                log_em_ton = transport_emission_kg / 1000
+                eq_em_ton = equipment_emission_kg / 1000
+                
+                fig_waterfall = go.Figure(go.Waterfall(
+                    name="Akumulasi Emisi",
+                    orientation="v",
+                    measure=["relative", "relative", "relative", "total"],
+                    x=["Material (A1-A3)", "Logistik (A4)", "Alat Berat (A5)", "Total Proyek"],
+                    textposition="outside",
+                    text=[f"{mat_em_ton:,.2f} Ton", f"{log_em_ton:,.2f} Ton", f"{eq_em_ton:,.2f} Ton", f"{total_project_emission_ton:,.2f} Ton"],
+                    y=[mat_em_ton, log_em_ton, eq_em_ton, 0],
+                    connector={"line": {"color": "#94a3b8", "width": 2, "dash": "dot"}},
+                    decreasing={"marker": {"color": "#10b981"}},
+                    increasing={"marker": {"color": "#0284c7"}},
+                    totals={"marker": {"color": "#064e3b"}}
+                ))
+                fig_waterfall.update_layout(title="<b>Akumulasi Emisi Karbon (Waterfall Chart)</b>", font_family="Plus Jakarta Sans", margin=dict(t=50, b=20, l=20, r=20), height=300)
+                st.plotly_chart(fig_waterfall, use_container_width=True)
+
+            st.markdown("---")
+
+            col_g1, col_g2 = st.columns(2)
+            with col_g1:
+                fig_pie = px.pie(df, names="Material", values="Emisi (kg CO2e)", title="Kontribusi Emisi per Jenis Material Struktur", hole=0.45, color_discrete_sequence=px.colors.sequential.Greens_r)
+                fig_pie.update_layout(font_family="Plus Jakarta Sans", margin=dict(t=50, b=20, l=20, r=20))
+                st.plotly_chart(fig_pie, use_container_width=True)
+            
+            with col_g2:
+                source_df = pd.DataFrame([
+                    {"Sumber": "Material Konstruksi", "Emisi (Ton CO2e)": total_mat_emission_kg / 1000},
+                    {"Sumber": "Pengangkutan Logistik (A4)", "Emisi (Ton CO2e)": transport_emission_kg / 1000},
+                    {"Sumber": "BBM Alat Berat (A5)", "Emisi (Ton CO2e)": equipment_emission_kg / 1000},
+                ])
+                fig_bar = px.bar(source_df, x="Sumber", y="Emisi (Ton CO2e)", color="Sumber", title="Komposisi Emisi Karbon Berdasarkan Tahapan Pelaksanaan", color_discrete_map={"Material Konstruksi": "#059669", "Pengangkutan Logistik (A4)": "#0284c7", "BBM Alat Berat (A5)": "#d97706"})
+                fig_bar.update_layout(font_family="Plus Jakarta Sans", margin=dict(t=50, b=20, l=20, r=20), showlegend=False)
+                st.plotly_chart(fig_bar, use_container_width=True)
+
+        with tab_b:
+            st.dataframe(
+                df, 
+                use_container_width=True,
+                column_config={
+                    "Jumlah": st.column_config.NumberColumn(format="%.2f"),
+                    "Emisi (kg CO2e)": st.column_config.NumberColumn(format="%.2f kg CO2e"),
+                    "Biaya (Rp)": st.column_config.NumberColumn(format="Rp %d")
+                }
+            )
+            
+            col_d1, col_d2, col_d3 = st.columns(3)
+            with col_d1:
+                st.download_button(label="📥 Download Data (CSV)", data=df.to_csv(index=False).encode('utf-8'), file_name="Laporan_Emisi_EcoBuild.csv", mime="text/csv", use_container_width=True)
+            with col_d2:
+                if HAS_OPENPYXL:
+                    excel_bytes = generate_excel_report(df, total_project_emission_ton, total_mat_cost, cost_per_ton, transport_emission_kg, equipment_emission_kg, ice_version)
+                    st.download_button(label="📊 Download Laporan Excel (.xlsx)", data=excel_bytes, file_name="Laporan_Resmi_EcoBuild_Pro.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+                else:
+                    st.button("📊 Download Laporan Excel (.xlsx)", disabled=True, use_container_width=True)
+            with col_d3:
+                if HAS_REPORTLAB:
+                    pdf_bytes = generate_pdf_report(df, total_project_emission_ton, total_mat_cost, cost_per_ton, transport_emission_kg, equipment_emission_kg, ice_version)
+                    st.download_button(label="📄 Download Laporan Resmi (PDF)", data=pdf_bytes, file_name="Laporan_Resmi_EcoBuild_Pro.pdf", mime="application/pdf", use_container_width=True)
+                else:
+                    st.button("📄 Download Laporan Resmi (PDF)", disabled=True, use_container_width=True)
+    else:
+        st.info("💡 Masukkan jumlah/besaran material pada form di atas untuk menampilkan analisis grafik emisi.")
+
+# ==========================================
+# MENU 3: DATABASE MATERIAL ICE (OTOMATIS)
+# ==========================================
+elif menu == "📊 Database Material ICE (Otomatis)":
+    st.title("📊 Master Database Material ICE (Multilingual)")
+    
+    active_lang = st.session_state["app_lang"]
+    st.info(f"""
+    **ℹ️ Status Integrasi Database ICE & Mode Bahasa:**  
+    * **Versi Database:** `{ice_version}`  
+    * **Total Material Terdaftar:** `{len(df_ice_materials)} Jenis Material`  
+    * **Mode Bahasa Aktif:** `{active_lang}` *(Dapat diganti kapan saja dari Sidebar)*
+    """)
+
+    col_search1, col_search2 = st.columns([1, 2])
+    cat_col = "Kategori (ID)" if "Indonesia" in active_lang else ("Kategori (Bilingual)" if "Bilingual" in active_lang else "Kategori (EN)")
+    mat_col = "Nama Material (ID)" if "Indonesia" in active_lang else ("Nama Material (Bilingual)" if "Bilingual" in active_lang else "Nama Material (EN)")
+
+    with col_search1:
+        cat_options = ["Semua Kategori"] + sorted(list(df_ice_materials[cat_col].unique()))
+        cat_select = st.selectbox("🔍 Filter Berdasarkan Kategori:", cat_options)
+    with col_search2:
+        search_query = st.text_input("🔎 Cari Nama Material Spesifik:", placeholder="Ketik nama material, misal: Beton, Baja, Timber, Aluminium...")
+
+    display_df = df_ice_materials.copy()
+    if cat_select != "Semua Kategori":
+        display_df = display_df[display_df[cat_col] == cat_select]
+    if search_query:
+        display_df = display_df[
+            display_df["Nama Material (ID)"].str.contains(search_query, case=False, na=False) |
+            display_df["Nama Material (EN)"].str.contains(search_query, case=False, na=False)
+        ]
+
+    if not display_df.empty:
+        c_stat1, c_stat2, c_stat3 = st.columns(3)
+        with c_stat1:
+            st.metric("Total Material Tampil", f"{len(display_df):,} Jenis")
+        with c_stat2:
+            avg_fe = display_df["Faktor Emisi (kg CO2e/kg)"].mean()
+            st.metric("Rata-rata Faktor Emisi", f"{avg_fe:.4f} kg CO2e/kg")
+        with c_stat3:
+            min_row = display_df.sort_values(by="Faktor Emisi (kg CO2e/kg)").iloc[0]
+            st.metric("Emisi Terendah (Best Eco)", f"{min_row['Faktor Emisi (kg CO2e/kg)']:.4f} kg CO2e/kg")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    df_view = display_df[[cat_col, mat_col, "Faktor Emisi (kg CO2e/kg)", "Satuan"]].rename(columns={
+        cat_col: "Kategori Material",
+        mat_col: "Nama Material Struktur"
+    })
+    
+    st.dataframe(
+        df_view,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Faktor Emisi (kg CO2e/kg)": st.column_config.NumberColumn(format="%.6f kg CO2e/kg")
+        }
+    )
+
+# ==========================================
+# MENU 4: SIMULASI KOMPARASI DESAIN
+# ==========================================
+elif menu == "⚖️ Simulasi Komparasi Desain":
+    st.title("⚖️ Simulasi Komparasi: Skenario A vs Skenario B")
+    st.write(f"Mode Bahasa Aktif: **{st.session_state['app_lang']}**. Bandingkan dua opsi desain struktur secara langsung.")
+
+    mat_options = get_active_material_options(df_ice_materials, st.session_state["app_lang"])
+
+    col_s1, col_s2 = st.columns(2)
+
+    with col_s1:
+        st.markdown("""
+        <div style="background: #fff1f2; border: 1px solid #fecdd3; border-top: 4px solid #ef4444; border-radius: 12px; padding: 14px 18px; margin-bottom: 12px;">
+            <div style="font-weight: 800; color: #9f1239;">🔴 Skenario A (Desain Konvensional / Baseline)</div>
+        </div>
+        """, unsafe_allow_html=True)
+        mat_a = st.selectbox("Pilih Material Skenario A:", mat_options, index=0, key="sa_m")
+        vol_a = st.number_input("Jumlah Material A (kg):", min_value=0.0, value=1000.0, step=100.0, key="v_a")
+        price_a = st.number_input("Harga Satuan Material A (Rp/kg):", min_value=0.0, value=15000.0, step=1000.0, key="p_comp_a")
+        
+        row_a = df_ice_materials[
+            (df_ice_materials["Nama Material (ID)"] == mat_a) |
+            (df_ice_materials["Nama Material (EN)"] == mat_a) |
+            (df_ice_materials["Nama Material (Bilingual)"] == mat_a)
+        ].iloc[0]
+        f_a = float(row_a["Faktor Emisi (kg CO2e/kg)"])
+        emisi_a = vol_a * f_a
+        cost_a = vol_a * price_a
+
+    with col_s2:
+        st.markdown("""
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-top: 4px solid #10b981; border-radius: 12px; padding: 14px 18px; margin-bottom: 12px;">
+            <div style="font-weight: 800; color: #065f46;">🟢 Skenario B (Desain Alternatif / Ramah Lingkungan)</div>
+        </div>
+        """, unsafe_allow_html=True)
+        mat_b = st.selectbox("Pilih Material Skenario B:", mat_options, index=min(1, len(mat_options)-1), key="sb_m")
+        vol_b = st.number_input("Jumlah Material B (kg):", min_value=0.0, value=1000.0, step=100.0, key="v_b")
+        price_b = st.number_input("Harga Satuan Material B (Rp/kg):", min_value=0.0, value=14000.0, step=1000.0, key="p_comp_b")
+        
+        row_b = df_ice_materials[
+            (df_ice_materials["Nama Material (ID)"] == mat_b) |
+            (df_ice_materials["Nama Material (EN)"] == mat_b) |
+            (df_ice_materials["Nama Material (Bilingual)"] == mat_b)
+        ].iloc[0]
+        f_b = float(row_b["Faktor Emisi (kg CO2e/kg)"])
+        emisi_b = vol_b * f_b
+        cost_b = vol_b * price_b
+
+    st.markdown("---")
+    st.subheader("📈 Hasil Analisis Komparasi Emisi & Biaya")
+
+    emisi_a_ton = emisi_a / 1000
+    emisi_b_ton = emisi_b / 1000
+    hemat_emisi_pct = ((emisi_a - emisi_b) / emisi_a * 100) if emisi_a > 0 else 0
+    delta_emisi_ton = emisi_a_ton - emisi_b_ton
+    delta_cost = cost_b - cost_a
+    hemat_biaya_pct = ((cost_a - cost_b) / cost_a * 100) if cost_a > 0 else 0
+
+    col_c1, col_c2, col_c3 = st.columns(3)
+    
+    with col_c1:
+        st.markdown(f"""
+<div class="exec-metric-card status-critical">
+    <div>
+        <div class="exec-card-head">
+            <div class="exec-card-title-group">
+                <span class="exec-card-icon">🔴</span>
+                <span class="exec-card-title">Emisi Skenario A</span>
+            </div>
+            <span class="exec-status-pill pill-critical">BASELINE</span>
+        </div>
+        <div class="exec-card-value">{emisi_a_ton:,.3f} <span class="exec-card-unit">Ton CO2e</span></div>
+    </div>
+    <div class="exec-card-subtext">
+        Material: <b>{str(mat_a)[:35]}...</b><br>
+        FE: <b>{f_a:.6f} kg CO2e/kg</b>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+        
+    with col_c2:
+        st.markdown(f"""
+<div class="exec-metric-card status-optimal">
+    <div>
+        <div class="exec-card-head">
+            <div class="exec-card-title-group">
+                <span class="exec-card-icon">🟢</span>
+                <span class="exec-card-title">Emisi Skenario B</span>
+            </div>
+            <span class="exec-status-pill pill-optimal">{'REDUKSI ' + f'{hemat_emisi_pct:.1f}%' if hemat_emisi_pct > 0 else '0%'}</span>
+        </div>
+        <div class="exec-card-value">{emisi_b_ton:,.3f} <span class="exec-card-unit">Ton CO2e</span></div>
+    </div>
+    <div class="exec-card-subtext">
+        Material: <b>{str(mat_b)[:35]}...</b><br>
+        <b>Hemat Emisi: {abs(delta_emisi_ton):,.3f} Ton CO2e</b>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    with col_c3:
+        cost_diff_str = f"Hemat: Rp {abs(delta_cost):,.0f} ({abs(hemat_biaya_pct):.1f}%)" if delta_cost < 0 else (f"Investasi: +Rp {delta_cost:,.0f}" if delta_cost > 0 else "Biaya Sama")
+        st.markdown(f"""
+<div class="exec-metric-card theme-finance">
+    <div>
+        <div class="exec-card-head">
+            <div class="exec-card-title-group">
+                <span class="exec-card-icon">💼</span>
+                <span class="exec-card-title">Komparasi Anggaran</span>
+            </div>
+            <span class="exec-status-pill pill-finance">BIAYA PROYEK</span>
+        </div>
+        <div class="exec-card-value">Rp {cost_b:,.0f}</div>
+    </div>
+    <div class="exec-card-subtext">
+        Baseline (A): <b>Rp {cost_a:,.0f}</b><br>
+        <b>{cost_diff_str}</b>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    col_ch1, col_ch2 = st.columns(2)
+    with col_ch1:
+        comp_df = pd.DataFrame([
+            {"Skenario": "Skenario A (Baseline)", "Emisi (Ton CO2e)": emisi_a_ton},
+            {"Skenario": "Skenario B (Green Design)", "Emisi (Ton CO2e)": emisi_b_ton},
+        ])
+        fig_comp = px.bar(comp_df, x="Skenario", y="Emisi (Ton CO2e)", color="Skenario", title="Komparasi Total Emisi Karbon (Ton CO2e)", color_discrete_map={"Skenario A (Baseline)": "#ef4444", "Skenario B (Green Design)": "#10b981"})
+        fig_comp.update_layout(font_family="Plus Jakarta Sans", margin=dict(t=50, b=20, l=20, r=20), showlegend=False)
+        st.plotly_chart(fig_comp, use_container_width=True)
+
+    with col_ch2:
+        cost_df = pd.DataFrame([
+            {"Skenario": "Skenario A (Baseline)", "Biaya (Rp)": cost_a},
+            {"Skenario": "Skenario B (Green Design)", "Biaya (Rp)": cost_b},
+        ])
+        fig_cost = px.bar(cost_df, x="Skenario", y="Biaya (Rp)", color="Skenario", title="Komparasi Total Biaya Material (Rp)", color_discrete_map={"Skenario A (Baseline)": "#64748b", "Skenario B (Green Design)": "#0284c7"})
+        fig_cost.update_layout(font_family="Plus Jakarta Sans", margin=dict(t=50, b=20, l=20, r=20), showlegend=False)
+        st.plotly_chart(fig_cost, use_container_width=True)
+
+# ==========================================
+# MENU 5: SIKLUS HIDUP EMISI & SOLUSI
+# ==========================================
+elif menu == "📚 Siklus Hidup Emisi & Solusi":
+    st.title("📚 Edukasi: Siklus Hidup Karbon dalam Teknik Sipil")
+    st.write("Analisis Komprehensif Penilaian Siklus Hidup (*Life Cycle Assessment / LCA*) pada Struktur Bangunan Gedung.")
+
+    st.subheader("📊 Tipikal Distribusi Emisi Karbon Bangunan Gedung (Masa Layan 50 Tahun)")
+    col_lca1, col_lca2 = st.columns([1, 1])
+    
+    with col_lca1:
+        lca_chart_df = pd.DataFrame([
+            {"Tahapan LCA": "Produksi Material (A1-A3)", "Proporsi (%)": 28},
+            {"Tahapan LCA": "Pengangkutan & Logistik (A4)", "Proporsi (%)": 4},
+            {"Tahapan LCA": "Konstruksi di Lapangan (A5)", "Proporsi (%)": 5},
+            {"Tahapan LCA": "Operasional 50 Tahun (B1-B7)", "Proporsi (%)": 60},
+            {"Tahapan LCA": "Pembongkaran & Akhir Masa Layan (C1-C4)", "Proporsi (%)": 3},
+        ])
+        fig_lca_donut = px.pie(lca_chart_df, names="Tahapan LCA", values="Proporsi (%)", hole=0.45, title="Estimasi Kontribusi Emisi Karbon (%)", color_discrete_sequence=px.colors.qualitative.Dark24)
+        fig_lca_donut.update_layout(font_family="Plus Jakarta Sans", margin=dict(t=50, b=20, l=20, r=20))
+        st.plotly_chart(fig_lca_donut, use_container_width=True)
+
+    with col_lca2:
+        st.markdown("""
+        **Penjelasan Pembagian Siklus Hidup (Standar BS EN 15978):**
+        * **A1-A3 (Product Stage):** *Cradle-to-Gate* — Ekstraksi dan pabrikasi material.
+        * **A4-A5 (Construction Stage):** Pengiriman logistik material dan bahan bakar alat berat.
+        * **B1-B7 (Use Stage):** Penggunaan energi listrik HVAC/penerangan selama puluhan tahun.
+        * **C1-C4 (End of Life Stage):** Pembongkaran gedung, pemilahan, dan pembuangan akhir.
+        * **Modul D:** Potensi penghematan emisi dari daur ulang (*Recycling / Reuse*).
+        """)
+
+    st.markdown("---")
+    st.subheader("🔍 Detail Tahapan LCA & Strategi Mitigasi Teknik Sipil")
+
+    t1, t2, t3, t4, t5 = st.tabs([
+        "1️⃣ Material & Ekstraksi (A1-A3)", 
+        "2️⃣ Pengangkutan Logistik (A4)", 
+        "3️⃣ Pelaksanaan Konstruksi (A5)", 
+        "4️⃣ Operasional Bangunan (B1-B7)", 
+        "5️⃣ Pembongkaran & Daur Ulang (C1-C4 & D)"
+    ])
+
+    with t1:
+        st.markdown("### 1. Embodied Carbon: Material & Ekstraksi (Modul A1 - A3)")
+        col_t1a, col_t1b = st.columns(2)
+        with col_t1a:
+            st.error("""
+            **🔥 Sumber Emisi Utama:**
+            * Pembakaran batu kapur pada kiln semen dengan suhu $>1400^\\circ\\text{C}$.
+            * Penggunaan batu bara koks pada peleburan bijih besi.
+            """)
+        with col_t1b:
+            st.success("""
+            **💡 Solusi & Best Practices:**
+            * Gunakan *Fly Ash* atau *GGBFS / Slag* 30%-50% pada beton.
+            * Manfaatkan baja daur ulang *Electric Arc Furnace* (EAF).
+            """)
+
+    with t2:
+        st.markdown("### 2. Transport Carbon: Pengangkutan Logistik (Modul A4)")
+        col_t2a, col_t2b = st.columns(2)
+        with col_t2a:
+            st.error("""
+            **🔥 Sumber Emisi Utama:**
+            * Konsumsi solar armada truk tronton & pengangkutan jarak jauh.
+            """)
+        with col_t2b:
+            st.success("""
+            **💡 Solusi & Best Practices:**
+            * Prioritaskan produsen material lokal dalam radius $< 100\\text{ km}$.
+            """)
+
+    with t3:
+        st.markdown("### 3. Construction Carbon: Pelaksanaan di Lapangan (Modul A5)")
+        col_t3a, col_t3b = st.columns(2)
+        with col_t3a:
+            st.error("""
+            **🔥 Sumber Emisi Utama:**
+            * BBM solar ekskavator, crane, dan genset lokasi proyek.
+            """)
+        with col_t3b:
+            st.success("""
+            **💡 Solusi & Best Practices:**
+            * Gunakan beton pracetak (precast) dan bekisting aluminium berulang.
+            """)
+
+    with t4:
+        st.markdown("### 4. Operational Carbon: Pengoperasian Gedung (Modul B1 - B7)")
+        col_t4a, col_t4b = st.columns(2)
+        with col_t4a:
+            st.error("""
+            **🔥 Sumber Emisi Utama:**
+            * Beban listrik AC/HVAC dan pencahayaan harian gedung.
+            """)
+        with col_t4b:
+            st.success("""
+            **💡 Solusi & Best Practices:**
+            * Terapkan desain ventilasi pasif dan panel surya (BIPV).
+            """)
+
+    with t5:
+        st.markdown("### 5. End-of-Life & Beyond: Daur Ulang (Modul C1 - C4 & D)")
+        col_t5a, col_t5b = st.columns(2)
+        with col_t5a:
+            st.error("""
+            **🔥 Sumber Emisi Utama:**
+            * Penghancuran beton dan pembuangan puing ke tempat pembuangan akhir.
+            """)
+        with col_t5b:
+            st.success("""
+            **💡 Solusi & Best Practices:**
+            * Terapkan *Design for Deconstruction* (DfD) dan daur ulang puing beton (RCA).
+            """)
+
+# ==========================================
+# FOOTER EKSEKUTIF
+# ==========================================
+st.markdown("---")
+st.markdown(
+    "<p style='text-align: center; color: #94a3b8; font-size: 0.88rem;'>"
+    "EcoBuild Pro v2.0 • Executive Civil Carbon & Cost Intelligence • Designed by <b>CV Kingsman IDN</b>"
+    "</p>", 
+    unsafe_allow_html=True
+)

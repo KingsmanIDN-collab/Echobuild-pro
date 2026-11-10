@@ -523,6 +523,95 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ==========================================
+# HELPER & PARSER CERDAS UNTUK IMPOR FILE RAB EXCEL / CSV
+# ==========================================
+def smart_read_rab(file_obj, filename):
+    """Mendeteksi posisi baris header tabel secara otomatis walaupun ada Kop/Judul di atas tabel"""
+    if filename.endswith(".csv"):
+        df_raw = pd.read_csv(file_obj, header=None)
+    else:
+        df_raw = pd.read_excel(file_obj, header=None)
+        
+    header_row_idx = None
+    for idx, row in df_raw.iterrows():
+        row_str = " ".join([str(val).lower() for val in row.values if pd.notna(val)])
+        if ("material" in row_str or "nama" in row_str or "bahan" in row_str) and ("jumlah" in row_str or "volume" in row_str or "qty" in row_str):
+            header_row_idx = idx
+            break
+            
+    file_obj.seek(0)
+    if header_row_idx is not None:
+        return pd.read_csv(file_obj, header=header_row_idx) if filename.endswith(".csv") else pd.read_excel(file_obj, header=header_row_idx)
+    else:
+        return pd.read_csv(file_obj) if filename.endswith(".csv") else pd.read_excel(file_obj)
+
+def get_robust_col_map(columns):
+    """Memetakan nama kolom secara presisi tanpa tertukar antara Harga Satuan & Total Biaya"""
+    col_map = {}
+    cols_clean = [str(c).strip() for c in columns]
+    
+    # 1. Nama Material
+    for c in cols_clean:
+        clow = c.lower()
+        if clow in ["material", "nama material", "nama_material", "nama bahan", "bahan"]:
+            col_map["Material"] = c
+            break
+    if "Material" not in col_map:
+        for c in cols_clean:
+            clow = c.lower()
+            if "nama" in clow or ("material" in clow and "tipe" not in clow and "jenis" not in clow):
+                col_map["Material"] = c
+                break
+
+    # 2. Jumlah / Volume
+    for c in cols_clean:
+        clow = c.lower()
+        if "total" not in clow and ("jumlah" in clow or "volume" in clow or "qty" in clow):
+            col_map["Jumlah"] = c
+            break
+
+    # 3. Satuan / Unit
+    for c in cols_clean:
+        clow = c.lower()
+        if clow in ["satuan", "unit"]:
+            col_map["Satuan"] = c
+            break
+    if "Satuan" not in col_map:
+        for c in cols_clean:
+            clow = c.lower()
+            if "satuan" in clow and "harga" not in clow:
+                col_map["Satuan"] = c
+                break
+
+    # 4. Faktor Emisi
+    for c in cols_clean:
+        clow = c.lower()
+        if "faktor" in clow or "fe" in clow or "co2e/unit" in clow or "co2e/kg" in clow or "emission factor" in clow:
+            col_map["Faktor Emisi"] = c
+            break
+    if "Faktor Emisi" not in col_map:
+        for c in cols_clean:
+            clow = c.lower()
+            if "total" not in clow and ("emisi" in clow or "co2" in clow):
+                col_map["Faktor Emisi"] = c
+                break
+
+    # 5. Harga Satuan
+    for c in cols_clean:
+        clow = c.lower()
+        if "harga satuan" in clow or "unit price" in clow or "harga/unit" in clow or "harga/satuan" in clow:
+            col_map["Harga Satuan"] = c
+            break
+    if "Harga Satuan" not in col_map:
+        for c in cols_clean:
+            clow = c.lower()
+            if "total" not in clow and ("harga" in clow or "price" in clow):
+                col_map["Harga Satuan"] = c
+                break
+                
+    return col_map
+
+# ==========================================
 # 2. DYNAMIC EXCEL ICE DATABASE PARSER
 # ==========================================
 @st.cache_data
@@ -1011,22 +1100,10 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
                 file_id = f"{uploaded_rab.name}_{uploaded_rab.size}"
                 if st.session_state.get("last_uploaded_rab_id") != file_id:
                     try:
-                        df_rab = pd.read_csv(uploaded_rab) if uploaded_rab.name.endswith(".csv") else pd.read_excel(uploaded_rab)
+                        df_rab = smart_read_rab(uploaded_rab, uploaded_rab.name)
                         df_rab.columns = [str(c).strip() for c in df_rab.columns]
                         
-                        col_map = {}
-                        for c in df_rab.columns:
-                            clow = c.lower()
-                            if "material" in clow or "nama" in clow or "bahan" in clow:
-                                col_map["Material"] = c
-                            elif "harga" in clow or "price" in clow or "rp" in clow:
-                                col_map["Harga Satuan"] = c
-                            elif "faktor" in clow or "emisi" in clow or "co2" in clow:
-                                col_map["Faktor Emisi"] = c
-                            elif "satuan" in clow or "unit" in clow:
-                                col_map["Satuan"] = c
-                            elif "jumlah" in clow or "volume" in clow or "qty" in clow:
-                                col_map["Jumlah"] = c
+                        col_map = get_robust_col_map(df_rab.columns)
 
                         if "Material" in col_map and "Jumlah" in col_map:
                             num_r = len(df_rab)

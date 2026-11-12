@@ -1630,4 +1630,3 @@ st.markdown(
     "</p>",
     unsafe_allow_html=True
 )
-Diproses dan dianalisis dalam kode

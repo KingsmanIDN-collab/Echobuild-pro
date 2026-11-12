@@ -73,7 +73,7 @@ bg_url = get_image_base64(get_existing_image([
 # ==========================================
 # CUSTOM CSS STYLING (ADAPTIVE LIGHT & DARK THEME)
 # ==========================================
-st.markdown(f"""<style>
+st.markdown("""<style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 html, body, [class*="css"] {
@@ -88,7 +88,7 @@ html, body, [class*="css"] {
 
 /* HERO BANNER (Selalu kontras tinggi di Light & Dark Mode) */
 .hero-box {
-    background: linear-gradient(135deg, rgba(6, 78, 59, 0.95) 0%, rgba(15, 23, 42, 0.93) 100%), url('{bg_url}');
+    background: linear-gradient(135deg, rgba(6, 78, 59, 0.95) 0%, rgba(15, 23, 42, 0.93) 100%), url('__BG_URL__');
     background-size: cover;
     background-position: center;
     padding: 46px 38px;
@@ -344,7 +344,7 @@ section[data-testid="stSidebar"] div[data-testid="stAlert"] * {
     margin-bottom: 12px;
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
 }
-</style>""", unsafe_allow_html=True)
+</style>""".replace("__BG_URL__", bg_url), unsafe_allow_html=True)
 
 
 # ==========================================

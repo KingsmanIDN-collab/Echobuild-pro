@@ -238,14 +238,33 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] svg {
     fill: #f8fafc !important;
 }
 
-section[data-testid="stSidebar"] div[data-testid="stAlert"] {
+section[data-testid="stSidebar"] div[data-testid="stAlert"],
+section[data-testid="stSidebar"] div[data-testid="stAlertContainer"],
+section[data-testid="stSidebar"] div[role="alert"] {
     background-color: rgba(16, 185, 129, 0.14) !important;
     border: 1px solid rgba(52, 211, 153, 0.35) !important;
     color: #ecfdf5 !important;
 }
 
-section[data-testid="stSidebar"] div[data-testid="stAlert"] * {
+section[data-testid="stSidebar"] div[data-testid="stAlert"] *,
+section[data-testid="stSidebar"] div[data-testid="stAlertContainer"] *,
+section[data-testid="stSidebar"] div[role="alert"] * {
     color: #ecfdf5 !important;
+}
+
+.sb-info-card {
+    background: rgba(16, 185, 129, 0.14);
+    border: 1px solid rgba(52, 211, 153, 0.35);
+    border-radius: 14px;
+    padding: 14px 15px;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: #ecfdf5 !important;
+    margin-top: 6px;
+}
+
+.sb-info-card b {
+    color: #6ee7b7 !important;
 }
 
 .sb-card {
@@ -880,10 +899,13 @@ with st.sidebar:
     )
 
     st.markdown("---")
-    st.info(
-        f"⚡ **ICE DB:** {len(df_ice_materials):,} Material Aktif\n\n"
-        f"📘 **Standar:** BS EN 15978 (A1–D)\n\n"
-        f"🎓 **Dosen Pengampu:**\nDr. Ir. Dedy Firmansyah, S.Pd., M.T."
+    st.markdown(
+        f'<div class="sb-info-card">'
+        f'⚡ <b>ICE DB:</b> {len(df_ice_materials):,} Material Aktif<br/><br/>'
+        f'📘 <b>Standar:</b> BS EN 15978 (A1–D)<br/><br/>'
+        f'🎓 <b>Dosen Pengampu:</b><br/>Dr. Ir. Dedy Firmansyah, S.Pd., M.T.'
+        f'</div>',
+        unsafe_allow_html=True
     )
 
 # ==========================================

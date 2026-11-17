@@ -66,302 +66,463 @@ def get_existing_image(filenames):
                 return cand
     return None
 
+def style_plotly_fig(fig):
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Plus Jakarta Sans, sans-serif"),
+        margin=dict(t=48, b=32, l=24, r=24),
+        legend=dict(bgcolor="rgba(0,0,0,0)")
+    )
+    fig.update_xaxes(
+        gridcolor="rgba(148, 163, 184, 0.2)",
+        zerolinecolor="rgba(148, 163, 184, 0.3)"
+    )
+    fig.update_yaxes(
+        gridcolor="rgba(148, 163, 184, 0.2)",
+        zerolinecolor="rgba(148, 163, 184, 0.3)"
+    )
+    return fig
+
 bg_url = get_image_base64(get_existing_image([
     "bg_green_building.avif", "bg_green_building.jpg", "bg_green_building.jpeg", "bg_green_building.png"
 ])) or "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=1400"
 
 # ==========================================
-# CUSTOM CSS STYLING (ADAPTIVE LIGHT & DARK THEME)
+# CUSTOM CSS STYLING (60-30-10 & ADAPTIVE LIGHT/DARK THEME)
 # ==========================================
 st.markdown("""<style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 html, body, [class*="css"] {
     font-family: 'Plus Jakarta Sans', sans-serif;
+    color: color-mix(in srgb, var(--text-color) 88%, var(--background-color) 12%);
+}
+
+/* 60% LATAR UTAMA NETRAL ADAPTIF (Light: #F8FAFC lembut | Dark: Deep Slate #12161f) */
+[data-testid="stAppViewContainer"] {
+    background-color: color-mix(in srgb, var(--background-color) 96%, #64748b 4%) !important;
+}
+
+[data-testid="stHeader"] {
+    background-color: transparent !important;
 }
 
 .block-container {
-    padding-top: 1.8rem !important;
-    padding-bottom: 3rem !important;
+    padding-top: 32px !important;
+    padding-bottom: 48px !important;
     max-width: 1380px;
 }
 
-/* HERO BANNER (Selalu kontras tinggi di Light & Dark Mode) */
-.hero-box {
-    background: linear-gradient(135deg, rgba(6, 78, 59, 0.95) 0%, rgba(15, 23, 42, 0.93) 100%), url('__BG_URL__');
-    background-size: cover;
-    background-position: center;
-    padding: 46px 38px;
-    border-radius: 22px;
-    color: #ffffff !important;
-    margin-bottom: 26px;
-    box-shadow: 0 20px 38px -14px rgba(6, 78, 59, 0.4);
-    border: 1px solid rgba(110, 231, 183, 0.25);
+h1, h2, h3, h4, h5, h6, p, li, label, .stMarkdown {
+    color: color-mix(in srgb, var(--text-color) 88%, var(--background-color) 12%);
 }
 
-.hero-badge {
-    background: rgba(16, 185, 129, 0.22);
-    color: #6ee7b7 !important;
-    padding: 6px 16px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    letter-spacing: 0.4px;
-    display: inline-block;
-    margin-bottom: 14px;
-    border: 1px solid rgba(110, 231, 183, 0.4);
+hr {
+    margin: 24px 0 !important;
+    border-color: color-mix(in srgb, var(--text-color) 12%, transparent) !important;
 }
 
-.hero-title {
-    font-size: 2.5rem;
-    font-weight: 800;
-    margin-bottom: 10px;
-    line-height: 1.15;
-    color: #ffffff !important;
-}
-
-.hero-sub {
-    font-size: 1.03rem;
-    color: #e2e8f0 !important;
-    max-width: 880px;
-    line-height: 1.6;
-    margin-bottom: 18px;
-}
-
-.hero-pills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 10px;
-}
-
-.hero-pill-item {
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    padding: 6px 14px;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: #f8fafc !important;
-}
-
-/* ADAPTIVE CARDS (Otomatis mengikuti tema Light / Dark Streamlit) */
-.feature-card {
-    background-color: var(--secondary-background-color);
-    color: var(--text-color);
-    border-radius: 16px;
-    padding: 20px;
-    border: 1px solid rgba(148, 163, 184, 0.28);
-    box-shadow: 0 8px 20px -8px rgba(15, 23, 42, 0.12);
-    height: 100%;
-    transition: transform 0.2s ease;
-}
-
-.feature-title {
-    font-size: 1rem;
-    font-weight: 700;
-    color: #10b981;
-    margin-bottom: 6px;
-}
-
-.feature-desc {
-    font-size: 0.85rem;
-    color: var(--text-color);
-    opacity: 0.88;
-    line-height: 1.5;
-}
-
-.metric-card {
-    background-color: var(--secondary-background-color);
-    color: var(--text-color);
-    border-radius: 16px;
-    padding: 20px;
-    border: 1px solid rgba(148, 163, 184, 0.28);
-    box-shadow: 0 10px 24px -8px rgba(15, 23, 42, 0.12);
-}
-
-.m-opt { border-top: 5px solid #10b981; background: linear-gradient(180deg, rgba(16, 185, 129, 0.14) 0%, var(--secondary-background-color) 100%); }
-.m-mod { border-top: 5px solid #f59e0b; background: linear-gradient(180deg, rgba(245, 158, 11, 0.14) 0%, var(--secondary-background-color) 100%); }
-.m-crit { border-top: 5px solid #ef4444; background: linear-gradient(180deg, rgba(239, 68, 68, 0.14) 0%, var(--secondary-background-color) 100%); }
-.m-fin { border-top: 5px solid #2563eb; background: linear-gradient(180deg, rgba(37, 99, 235, 0.14) 0%, var(--secondary-background-color) 100%); }
-.m-eff { border-top: 5px solid #7c3aed; background: linear-gradient(180deg, rgba(124, 58, 237, 0.14) 0%, var(--secondary-background-color) 100%); }
-.m-int { border-top: 5px solid #0d9488; background: linear-gradient(180deg, rgba(13, 148, 136, 0.14) 0%, var(--secondary-background-color) 100%); }
-
-.m-lbl {
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.4px;
-    color: var(--text-color);
-    opacity: 0.8;
-}
-
-.m-val {
-    font-size: 1.75rem;
-    font-weight: 800;
-    color: var(--text-color);
-    margin: 6px 0;
-}
-
-.m-sub {
-    font-size: 0.78rem;
-    color: var(--text-color);
-    opacity: 0.82;
-    border-top: 1px dashed rgba(148, 163, 184, 0.4);
-    padding-top: 8px;
-    margin-top: 8px;
-}
-
-/* SIDEBAR DARK GLASS (Kontras sempurna di Light Mode maupun Dark Mode) */
+/* 30% STRUKTUR SIDEBAR ADAPTIF (Mengikuti Tema Light/Dark Streamlit) */
 section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #071318 0%, #0d212b 100%) !important;
+    background: color-mix(in srgb, var(--background-color) 90%, #475569 10%) !important;
+    border-right: 1px solid color-mix(in srgb, var(--text-color) 12%, transparent) !important;
 }
 
 section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
 section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p,
 section[data-testid="stSidebar"] label,
 section[data-testid="stSidebar"] .stRadio label span {
-    color: #f1f5f9 !important;
+    color: color-mix(in srgb, var(--text-color) 90%, var(--background-color) 10%) !important;
 }
 
 section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
-    background-color: rgba(255, 255, 255, 0.08) !important;
-    border: 1px solid rgba(255, 255, 255, 0.22) !important;
-    color: #f8fafc !important;
+    background-color: color-mix(in srgb, var(--background-color) 96%, var(--secondary-background-color) 4%) !important;
+    border: 1px solid color-mix(in srgb, var(--text-color) 16%, transparent) !important;
+    border-radius: 8px !important;
+    color: color-mix(in srgb, var(--text-color) 90%, var(--background-color) 10%) !important;
 }
 
 section[data-testid="stSidebar"] div[data-baseweb="select"] span,
 section[data-testid="stSidebar"] div[data-baseweb="select"] div {
-    color: #f8fafc !important;
+    color: color-mix(in srgb, var(--text-color) 90%, var(--background-color) 10%) !important;
 }
 
 section[data-testid="stSidebar"] div[data-baseweb="select"] svg {
-    fill: #f8fafc !important;
+    fill: color-mix(in srgb, var(--text-color) 80%, var(--background-color) 20%) !important;
 }
 
 section[data-testid="stSidebar"] div[data-testid="stAlert"],
 section[data-testid="stSidebar"] div[data-testid="stAlertContainer"],
 section[data-testid="stSidebar"] div[role="alert"] {
-    background-color: rgba(16, 185, 129, 0.14) !important;
-    border: 1px solid rgba(52, 211, 153, 0.35) !important;
-    color: #ecfdf5 !important;
+    background-color: color-mix(in srgb, var(--background-color) 90%, #10b981 10%) !important;
+    border: 1px solid color-mix(in srgb, #10b981 30%, transparent) !important;
+    border-radius: 12px !important;
+    color: color-mix(in srgb, var(--text-color) 90%, var(--background-color) 10%) !important;
 }
 
 section[data-testid="stSidebar"] div[data-testid="stAlert"] *,
 section[data-testid="stSidebar"] div[data-testid="stAlertContainer"] *,
 section[data-testid="stSidebar"] div[role="alert"] * {
-    color: #ecfdf5 !important;
-}
-
-.sb-info-card {
-    background: rgba(16, 185, 129, 0.14);
-    border: 1px solid rgba(52, 211, 153, 0.35);
-    border-radius: 14px;
-    padding: 14px 15px;
-    font-size: 0.85rem;
-    line-height: 1.55;
-    color: #ecfdf5 !important;
-    margin-top: 6px;
-}
-
-.sb-info-card b {
-    color: #6ee7b7 !important;
+    color: color-mix(in srgb, var(--text-color) 90%, var(--background-color) 10%) !important;
 }
 
 .sb-card {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 18px;
-    padding: 18px 14px;
+    background: color-mix(in srgb, var(--background-color) 98%, var(--secondary-background-color) 2%);
+    border: 1px solid color-mix(in srgb, var(--text-color) 14%, transparent);
+    border-radius: 12px;
+    padding: 16px;
     text-align: center;
     margin-bottom: 16px;
-    color: #f8fafc !important;
+    color: color-mix(in srgb, var(--text-color) 92%, var(--background-color) 8%);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--text-color) 5%, transparent);
+    transition: all 0.2s ease;
 }
 
-/* KARTU ITEM MATERIAL & SUBTOTAL (Adaptif Light & Dark Mode) */
+.sb-card-sub {
+    font-size: 0.78rem;
+    color: #059669;
+    font-weight: 700;
+    margin-top: 4px;
+}
+
+.sb-info-card {
+    background: color-mix(in srgb, var(--background-color) 92%, #10b981 8%);
+    border: 1px solid color-mix(in srgb, #10b981 28%, transparent);
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: color-mix(in srgb, var(--text-color) 88%, var(--background-color) 12%);
+    margin-top: 8px;
+}
+
+.sb-info-card b {
+    color: color-mix(in srgb, #059669 72%, var(--text-color) 28%);
+}
+
+/* HERO BANNER ADAPTIF (Light: Hijau-Slate Lembut | Dark: Emerald-Slate Gelap) */
+.hero-box {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--background-color) 86%, #10b981 14%) 0%, color-mix(in srgb, var(--background-color) 92%, #0284c7 8%) 100%);
+    padding: 32px;
+    border-radius: 12px;
+    color: color-mix(in srgb, var(--text-color) 90%, #1E293B 10%);
+    margin-bottom: 24px;
+    border: 1px solid color-mix(in srgb, #10b981 28%, transparent);
+    box-shadow: 0 8px 24px -12px color-mix(in srgb, var(--text-color) 12%, transparent);
+}
+
+.hero-box::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url('__BG_URL__');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.06;
+    pointer-events: none;
+}
+
+.hero-box > * {
+    position: relative;
+    z-index: 1;
+}
+
+.hero-badge {
+    background: color-mix(in srgb, #10b981 16%, transparent);
+    color: color-mix(in srgb, #065F46 65%, var(--text-color) 35%);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    display: inline-block;
+    margin-bottom: 16px;
+    border: 1px solid color-mix(in srgb, #10b981 35%, transparent);
+}
+
+.hero-title {
+    font-size: 2.25rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    line-height: 1.2;
+    color: color-mix(in srgb, #065F46 60%, var(--text-color) 40%) !important;
+}
+
+.hero-sub {
+    font-size: 1rem;
+    color: color-mix(in srgb, var(--text-color) 85%, var(--background-color) 15%) !important;
+    max-width: 860px;
+    line-height: 1.65;
+    margin-bottom: 16px;
+}
+
+.hero-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.hero-pill-item {
+    background: color-mix(in srgb, var(--background-color) 70%, transparent);
+    border: 1px solid color-mix(in srgb, var(--text-color) 14%, transparent);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: color-mix(in srgb, var(--text-color) 88%, var(--background-color) 12%) !important;
+}
+
+/* 30% STRUKTUR KOTAK & KARTU (Radius 12px, Border 1px, Hover Halus) */
+.feature-card {
+    background-color: color-mix(in srgb, var(--background-color) 98%, var(--secondary-background-color) 2%);
+    color: color-mix(in srgb, var(--text-color) 88%, var(--background-color) 12%);
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid color-mix(in srgb, var(--text-color) 14%, transparent);
+    box-shadow: 0 4px 12px -6px color-mix(in srgb, var(--text-color) 8%, transparent);
+    height: 100%;
+    transition: all 0.2s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, #10b981 45%, transparent);
+    box-shadow: 0 10px 24px -10px color-mix(in srgb, #059669 22%, transparent);
+}
+
+.feature-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #059669;
+    margin-bottom: 8px;
+}
+
+.feature-desc {
+    font-size: 0.875rem;
+    color: color-mix(in srgb, var(--text-color) 80%, var(--background-color) 20%);
+    line-height: 1.55;
+}
+
+.metric-card {
+    background-color: color-mix(in srgb, var(--background-color) 98%, var(--secondary-background-color) 2%);
+    color: color-mix(in srgb, var(--text-color) 88%, var(--background-color) 12%);
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid color-mix(in srgb, var(--text-color) 14%, transparent);
+    box-shadow: 0 4px 12px -6px color-mix(in srgb, var(--text-color) 8%, transparent);
+    transition: all 0.2s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px -10px color-mix(in srgb, var(--text-color) 14%, transparent);
+}
+
+.m-opt { border-top: 4px solid #059669; background: linear-gradient(180deg, color-mix(in srgb, var(--background-color) 93%, #10b981 7%) 0%, color-mix(in srgb, var(--background-color) 98%, var(--secondary-background-color) 2%) 100%); }
+.m-mod { border-top: 4px solid #d97706; background: linear-gradient(180deg, color-mix(in srgb, var(--background-color) 93%, #f59e0b 7%) 0%, color-mix(in srgb, var(--background-color) 98%, var(--secondary-background-color) 2%) 100%); }
+.m-crit { border-top: 4px solid #dc2626; background: linear-gradient(180deg, color-mix(in srgb, var(--background-color) 93%, #ef4444 7%) 0%, color-mix(in srgb, var(--background-color) 98%, var(--secondary-background-color) 2%) 100%); }
+.m-fin { border-top: 4px solid #2563eb; background: linear-gradient(180deg, color-mix(in srgb, var(--background-color) 93%, #2563eb 7%) 0%, color-mix(in srgb, var(--background-color) 98%, var(--secondary-background-color) 2%) 100%); }
+.m-eff { border-top: 4px solid #7c3aed; background: linear-gradient(180deg, color-mix(in srgb, var(--background-color) 93%, #7c3aed 7%) 0%, color-mix(in srgb, var(--background-color) 98%, var(--secondary-background-color) 2%) 100%); }
+.m-int { border-top: 4px solid #0d9488; background: linear-gradient(180deg, color-mix(in srgb, var(--background-color) 93%, #0d9488 7%) 0%, color-mix(in srgb, var(--background-color) 98%, var(--secondary-background-color) 2%) 100%); }
+
+.m-lbl {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    color: color-mix(in srgb, var(--text-color) 75%, var(--background-color) 25%);
+}
+
+.m-val {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: color-mix(in srgb, var(--text-color) 92%, var(--background-color) 8%);
+    margin: 8px 0;
+}
+
+.m-sub {
+    font-size: 0.8rem;
+    color: color-mix(in srgb, var(--text-color) 78%, var(--background-color) 22%);
+    border-top: 1px dashed color-mix(in srgb, var(--text-color) 18%, transparent);
+    padding-top: 8px;
+    margin-top: 8px;
+}
+
+/* KARTU ITEM MATERIAL, SUBTOTAL & EXPANDER */
 .mat-bar {
-    background-color: var(--secondary-background-color);
-    color: var(--text-color);
-    border: 1px solid rgba(148, 163, 184, 0.35);
-    border-bottom: none;
-    border-radius: 12px 12px 0 0;
-    padding: 10px 14px;
+    background-color: color-mix(in srgb, var(--background-color) 98%, var(--secondary-background-color) 2%);
+    color: color-mix(in srgb, var(--text-color) 88%, var(--background-color) 12%);
+    border: 1px solid color-mix(in srgb, var(--text-color) 14%, transparent);
+    border-radius: 12px;
+    padding: 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 14px;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+}
+
+.mat-bar:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, #10b981 40%, transparent);
 }
 
 .mat-bar b {
-    color: var(--text-color);
+    color: color-mix(in srgb, var(--text-color) 90%, var(--background-color) 10%);
 }
 
 .mat-pill {
     background: #059669;
     color: #ffffff !important;
-    font-size: 0.74rem;
+    font-size: 0.75rem;
     font-weight: 700;
-    padding: 3px 11px;
-    border-radius: 14px;
-    margin-right: 6px;
+    padding: 4px 12px;
+    border-radius: 8px;
+    margin-right: 8px;
 }
 
 .mat-badge-src {
-    background: rgba(16, 185, 129, 0.15);
-    color: #10b981;
-    border: 1px solid rgba(16, 185, 129, 0.35);
-    font-size: 0.74rem;
+    background: color-mix(in srgb, #10b981 14%, transparent);
+    color: #059669;
+    border: 1px solid color-mix(in srgb, #10b981 35%, transparent);
+    font-size: 0.75rem;
     font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 12px;
+    padding: 4px 12px;
+    border-radius: 8px;
 }
 
 .sub-pill {
-    background-color: var(--secondary-background-color);
-    color: var(--text-color);
-    border: 1px solid rgba(148, 163, 184, 0.35);
-    border-radius: 10px;
-    padding: 9px 14px;
+    background-color: color-mix(in srgb, var(--background-color) 98%, var(--secondary-background-color) 2%);
+    color: color-mix(in srgb, var(--text-color) 88%, var(--background-color) 12%);
+    border: 1px solid color-mix(in srgb, var(--text-color) 14%, transparent);
+    border-radius: 12px;
+    padding: 16px;
     margin-top: 8px;
     display: flex;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 8px;
     font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.sub-pill:hover {
+    transform: translateY(-2px);
 }
 
 .sub-pill span, .sub-pill b {
-    color: var(--text-color);
+    color: color-mix(in srgb, var(--text-color) 88%, var(--background-color) 12%);
 }
 
 .eco-box {
-    background: rgba(16, 185, 129, 0.12);
-    border: 1px solid rgba(16, 185, 129, 0.45);
-    border-left: 5px solid #10b981;
-    border-radius: 10px;
-    padding: 10px 14px;
-    margin-top: 6px;
-    font-size: 0.84rem;
-    color: var(--text-color);
-    line-height: 1.48;
+    background: color-mix(in srgb, var(--background-color) 92%, #10b981 8%);
+    border: 1px solid color-mix(in srgb, #10b981 35%, transparent);
+    border-left: 4px solid #059669;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: color-mix(in srgb, var(--text-color) 88%, var(--background-color) 12%);
+    line-height: 1.55;
 }
 
 .eco-box code {
-    background: rgba(16, 185, 129, 0.22) !important;
-    color: var(--text-color) !important;
-    padding: 2px 6px;
-    border-radius: 5px;
+    background: color-mix(in srgb, #10b981 20%, transparent) !important;
+    color: color-mix(in srgb, var(--text-color) 90%, var(--background-color) 10%) !important;
+    padding: 2px 8px;
+    border-radius: 6px;
     font-weight: 700;
 }
 
 .lca-card {
-    background-color: var(--secondary-background-color);
-    color: var(--text-color);
-    border: 1px solid rgba(148, 163, 184, 0.3);
-    border-left: 5px solid #10b981;
+    background-color: color-mix(in srgb, var(--background-color) 98%, var(--secondary-background-color) 2%);
+    color: color-mix(in srgb, var(--text-color) 88%, var(--background-color) 12%);
+    border: 1px solid color-mix(in srgb, var(--text-color) 14%, transparent);
+    border-left: 4px solid #059669;
     border-radius: 12px;
     padding: 16px;
-    margin-bottom: 12px;
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    margin-bottom: 16px;
+    box-shadow: 0 4px 12px -6px color-mix(in srgb, var(--text-color) 8%, transparent);
+    line-height: 1.6;
+    transition: all 0.2s ease;
+}
+
+.lca-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, #10b981 45%, transparent);
+}
+
+[data-testid="stExpander"] {
+    background-color: color-mix(in srgb, var(--background-color) 98%, var(--secondary-background-color) 2%) !important;
+    border: 1px solid color-mix(in srgb, var(--text-color) 14%, transparent) !important;
+    border-radius: 12px !important;
+    margin-bottom: 16px !important;
+    transition: all 0.2s ease !important;
+}
+
+[data-testid="stExpander"]:hover {
+    border-color: color-mix(in srgb, #10b981 40%, transparent) !important;
+}
+
+[data-testid="stExpander"] details {
+    border: none !important;
+}
+
+[data-testid="stExpander"] summary {
+    padding: 16px !important;
+    font-weight: 700 !important;
+}
+
+/* 10% AKSEN AKSI EMERALD & TOMBOL (Radius 8px, Konsisten 8px Grid) */
+.stButton > button,
+.stDownloadButton > button {
+    border-radius: 8px !important;
+    padding: 8px 16px !important;
+    font-weight: 600 !important;
+    border: 1px solid color-mix(in srgb, var(--text-color) 16%, transparent) !important;
+    background-color: color-mix(in srgb, var(--background-color) 98%, var(--secondary-background-color) 2%) !important;
+    color: color-mix(in srgb, var(--text-color) 90%, var(--background-color) 10%) !important;
+    transition: all 0.2s ease !important;
+}
+
+.stButton > button:hover,
+.stDownloadButton > button:hover {
+    transform: translateY(-2px) !important;
+    border-color: #059669 !important;
+    background-color: color-mix(in srgb, var(--background-color) 92%, #10b981 8%) !important;
+    color: #059669 !important;
+}
+
+.stButton > button[kind="primary"],
+.stButton > button[data-testid="stBaseButton-primary"],
+.stDownloadButton > button {
+    background-color: #059669 !important;
+    border-color: #059669 !important;
+    color: #ffffff !important;
+}
+
+.stButton > button[kind="primary"]:hover,
+.stButton > button[data-testid="stBaseButton-primary"]:hover,
+.stDownloadButton > button:hover {
+    background-color: #10b981 !important;
+    border-color: #10b981 !important;
+    color: #ffffff !important;
+}
+
+div[data-testid="stMetric"] {
+    background-color: color-mix(in srgb, var(--background-color) 98%, var(--secondary-background-color) 2%);
+    border: 1px solid color-mix(in srgb, var(--text-color) 14%, transparent);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.2s ease;
+}
+
+div[data-testid="stMetric"]:hover {
+    transform: translateY(-2px);
 }
 </style>""".replace("__BG_URL__", bg_url), unsafe_allow_html=True)
 
@@ -870,12 +1031,12 @@ logo_b64 = get_image_base64(get_existing_image(["logo_kingsman.png", "logo_kings
 with st.sidebar:
     l_html = (
         f'<img src="{logo_b64}" style="max-width:125px;margin:0 auto 10px;display:block;border-radius:10px;" />'
-        if logo_b64 else '<div style="font-size:2.3rem;margin-bottom:4px;">🏗️</div>'
+        if logo_b64 else '<div style="font-size:2.3rem;margin-bottom:8px;">🏗️</div>'
     )
     st.markdown(
         f'<div class="sb-card">{l_html}'
         f'<div style="font-size:1.35rem;font-weight:800;letter-spacing:-0.3px;">EcoBuild Pro</div>'
-        f'<div style="font-size:0.76rem;color:#34d399;font-weight:700;">● v2.1 Smart Eco-Swap Edition</div>'
+        f'<div class="sb-card-sub">● v2.1 Smart Eco-Swap Edition</div>'
         f'</div>',
         unsafe_allow_html=True
     )
@@ -959,37 +1120,43 @@ if menu == "🏠 Beranda":
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    c1, c2 = st.columns([1.15, 0.85])
-    with c1:
-        st.subheader("🌐 Urgensi Dekarbonisasi Sektor Konstruksi")
-        st.write(
-            "Industri konstruksi dan bangunan menyumbang **~37–40% emisi karbon global**, dengan porsi signifikan berasal dari "
-            "**Embodied Carbon** pada produksi semen/beton, peleburan baja, dan transportasi material berat ke lokasi proyek."
-        )
-        st.write(
-            "Melalui **EcoBuild Pro**, perencana struktur dan quantity surveyor dapat langsung mengevaluasi konsekuensi karbon dari "
-            "setiap pilihan spesifikasi teknis sebelum tahap pelaksanaan dimulai."
-        )
-        ig = get_existing_image(["gas_emisi.jpg", "gas_emisi.jpeg"])
-        if ig:
-            st.image(ig, caption="Ilustrasi Emisi Industri & Konstruksi Global", use_container_width=True)
-    with c2:
-        st.warning(
-            "🔥 **Refleksi Urgensi Iklim:** Peningkatan suhu global dan bencana ekologis (seperti Karhutla dan cuaca ekstrem) "
-            "menuntut insinyur sipil beralih dari desain konvensional menuju konstruksi rendah karbon (*Net-Zero Ready Construction*)."
-        )
-        ik = get_existing_image(["karhutla.jpg", "karhutla.jfif"])
-        if ik:
-            st.image(ik, caption="Dampak Krisis Iklim & Pentingnya Mitigasi Emisi Karbon", use_container_width=True)
-
-    st.markdown("---")
+    st.markdown('<div style="height:24px;"></div>', unsafe_allow_html=True)
     st.markdown("#### 🚀 Mulai Analisis Sekarang")
     b1, b2, b3, b4 = st.columns(4)
-    b1.button("🧮 Buka Kalkulator & Eco-Swap ➔", use_container_width=True, on_click=go_page, args=("🧮 Kalkulator & Analisis Proyek",))
+    b1.button("🧮 Buka Kalkulator & Eco-Swap ➔", use_container_width=True, type="primary", on_click=go_page, args=("🧮 Kalkulator & Analisis Proyek",))
     b2.button("📊 Jelajahi Database ICE ➔", use_container_width=True, on_click=go_page, args=("📊 Database Material ICE (Otomatis)",))
     b3.button("⚖️ Simulasi Komparasi A vs B ➔", use_container_width=True, on_click=go_page, args=("⚖️ Simulasi Komparasi Desain",))
     b4.button("📚 Panduan LCA (A1–D) ➔", use_container_width=True, on_click=go_page, args=("📚 Siklus Hidup Emisi & Solusi",))
+
+    st.markdown('<div style="height:16px;"></div>', unsafe_allow_html=True)
+    with st.expander("🌐 Konteks & Urgensi Dekarbonisasi Sektor Konstruksi (BS EN 15978)", expanded=False):
+        c1, c2 = st.columns([1.15, 0.85])
+        with c1:
+            st.subheader("🌐 Urgensi Dekarbonisasi Sektor Konstruksi")
+            st.write(
+                "Industri konstruksi dan bangunan menyumbang **~37–40% emisi karbon global**, dengan porsi signifikan berasal dari "
+                "**Embodied Carbon** pada produksi semen/beton, peleburan baja, dan transportasi material berat ke lokasi proyek."
+            )
+            st.write(
+                "Melalui **EcoBuild Pro**, perencana struktur dan quantity surveyor dapat langsung mengevaluasi konsekuensi karbon dari "
+                "setiap pilihan spesifikasi teknis sebelum tahap pelaksanaan dimulai."
+            )
+            ig = get_existing_image(["gas_emisi.jpg", "gas_emisi.jpeg"])
+            if ig:
+                st.image(ig, caption="Ilustrasi Emisi Industri & Konstruksi Global", use_container_width=True)
+        with c2:
+            st.markdown("""
+            <div class="lca-card">
+                <b>🌿 Refleksi Urgensi Iklim & Dekarbonisasi</b><br/>
+                Peningkatan suhu global dan risiko bencana ekologis menuntut insinyur sipil beralih dari desain konvensional
+                menuju konstruksi rendah karbon (<i>Net-Zero Ready Construction</i>).
+            </div>
+            <div class="lca-card">
+                <b>📐 Kepatuhan Standar BS EN 15978 & Greenship</b><br/>
+                Evaluasi sejak tahap perencanaan (<i>Early-Stage Embodied Carbon</i>) mampu memangkas hingga <b>30–55% jejak karbon</b>
+                melalui optimalisasi spesifikasi material berstandar ICE V5.0.
+            </div>
+            """, unsafe_allow_html=True)
 
 # ==========================================
 # MENU 2: KALKULATOR & ANALISIS PROYEK
@@ -1304,16 +1471,17 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
                 unsafe_allow_html=True
             )
             ce2.write("")
-            ce2.button("⚡ Ganti ke Hijau", key=f"swap_{i}", use_container_width=True, on_click=apply_swap, args=(i, eco, u_str, p_val, q_val))
+            ce2.button("⚡ Ganti ke Hijau", key=f"swap_{i}", use_container_width=True, type="primary", on_click=apply_swap, args=(i, eco, u_str, p_val, q_val))
 
     if green_swaps_available:
         def apply_all_swaps():
             for idx, alt_obj, u_s, p_v, q_v in green_swaps_available:
                 apply_swap(idx, alt_obj, u_s, p_v, q_v)
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown('<div style="height:16px;"></div>', unsafe_allow_html=True)
         st.button(
             f"🌿 Terapkan Semua ({len(green_swaps_available)}) Rekomendasi Material Hijau Sekaligus",
             use_container_width=True,
+            type="primary",
             on_click=apply_all_swaps
         )
 
@@ -1378,7 +1546,7 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
         unsafe_allow_html=True
     )
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown('<div style="height:16px;"></div>', unsafe_allow_html=True)
     o1, o2, o3 = st.columns(3)
     o1.success(f"🌳 **Carbon Offset Trembesi (10 Thn):**\n**{math.ceil(tot_kg/285) if tot_kg>0 else 0:,} Batang Pohon**")
     o2.success(f"🌲 **Carbon Offset Mahoni (10 Thn):**\n**{math.ceil(tot_kg/140) if tot_kg>0 else 0:,} Batang Pohon**")
@@ -1389,18 +1557,25 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
         ta, tb, tc = st.tabs(["📊 Grafik Analisis Emisi & Biaya", "🌿 Simulasi Potensi Eco-Swap", "📄 Tabel Rincian & Ekspor Audit"])
         with ta:
             cg1, cg2 = st.columns(2)
-            fig_pie = px.pie(df, names="Material", values="Emisi (kg CO2e)", title="Kontribusi Emisi Karbon per Material (A1–A3)", hole=0.45)
+            fig_pie = style_plotly_fig(
+                px.pie(df, names="Material", values="Emisi (kg CO2e)", title="Kontribusi Emisi Karbon per Material (A1–A3)", hole=0.45)
+            )
             cg1.plotly_chart(fig_pie, use_container_width=True)
             src_df = pd.DataFrame([
                 {"Tahap": "Produksi Material (A1–A3)", "Ton CO2e": tot_mat_kg / 1000.0},
                 {"Tahap": "Logistik Transport (A4)", "Ton CO2e": tr_kg / 1000.0},
                 {"Tahap": "Alat Berat Lapangan (A5)", "Ton CO2e": eq_kg / 1000.0}
             ])
-            cg2.plotly_chart(px.bar(src_df, x="Tahap", y="Ton CO2e", color="Tahap", title="Distribusi Emisi per Tahapan Konstruksi (Ton CO2e)"), use_container_width=True)
+            fig_src = style_plotly_fig(
+                px.bar(src_df, x="Tahap", y="Ton CO2e", color="Tahap", title="Distribusi Emisi per Tahapan Konstruksi (Ton CO2e)")
+            )
+            cg2.plotly_chart(fig_src, use_container_width=True)
 
-            fig_sc = px.scatter(
-                df, x="Biaya (Rp)", y="Emisi (kg CO2e)", size="Jumlah", color="Material",
-                title="Matriks Hotspot: Biaya Pengadaan (Rp) vs Emisi Karbon (kg CO2e)"
+            fig_sc = style_plotly_fig(
+                px.scatter(
+                    df, x="Biaya (Rp)", y="Emisi (kg CO2e)", size="Jumlah", color="Material",
+                    title="Matriks Hotspot: Biaya Pengadaan (Rp) vs Emisi Karbon (kg CO2e)"
+                )
             )
             st.plotly_chart(fig_sc, use_container_width=True)
 
@@ -1416,10 +1591,10 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
                 {"Kondisi": "RAB Saat Ini (Baseline)", "Emisi (Ton CO2e)": tot_ton},
                 {"Kondisi": "RAB Teroptimasi Eco-Swap", "Emisi (Ton CO2e)": pot_tot_kg / 1000.0}
             ])
-            st.plotly_chart(
-                px.bar(comp_eco_df, x="Kondisi", y="Emisi (Ton CO2e)", color="Kondisi", title="Proyeksi Penurunan Emisi Jika Seluruh Rekomendasi Hijau Diterapkan"),
-                use_container_width=True
+            fig_eco_bar = style_plotly_fig(
+                px.bar(comp_eco_df, x="Kondisi", y="Emisi (Ton CO2e)", color="Kondisi", title="Proyeksi Penurunan Emisi Jika Seluruh Rekomendasi Hijau Diterapkan")
             )
+            st.plotly_chart(fig_eco_bar, use_container_width=True)
 
         with tc:
             st.dataframe(df, use_container_width=True, hide_index=True)
@@ -1496,14 +1671,16 @@ elif menu == "📊 Database Material ICE (Otomatis)":
 
     if not vdf.empty:
         top_df = vdf.sort_values("Faktor Emisi (kg CO2e/kg)", ascending=False).head(12)
-        fig_db = px.bar(
-            top_df,
-            x="Faktor Emisi (kg CO2e/kg)",
-            y=mcol,
-            orientation="h",
-            color="Faktor Emisi (kg CO2e/kg)",
-            color_continuous_scale="Tealgrn",
-            title=f"Top {len(top_df)} Material dengan Faktor Emisi Tertinggi pada Filter Aktif"
+        fig_db = style_plotly_fig(
+            px.bar(
+                top_df,
+                x="Faktor Emisi (kg CO2e/kg)",
+                y=mcol,
+                orientation="h",
+                color="Faktor Emisi (kg CO2e/kg)",
+                color_continuous_scale="Tealgrn",
+                title=f"Top {len(top_df)} Material dengan Faktor Emisi Tertinggi pada Filter Aktif"
+            )
         )
         fig_db.update_layout(yaxis={'categoryorder': 'total ascending'})
         st.plotly_chart(fig_db, use_container_width=True)
@@ -1574,20 +1751,20 @@ elif menu == "⚖️ Simulasi Komparasi Desain":
         st.warning("⚠️ Skenario B saat ini memiliki emisi lebih tinggi atau sama dengan Skenario A. Pilih material dengan Faktor Emisi lebih rendah.")
 
     g1, g2 = st.columns(2)
-    g1.plotly_chart(
+    fig_comp_e = style_plotly_fig(
         px.bar(
             pd.DataFrame([{"Skenario": "Skenario A (Baseline)", "Emisi (Ton CO2e)": ea_tot}, {"Skenario": "Skenario B (Hijau)", "Emisi (Ton CO2e)": eb_tot}]),
             x="Skenario", y="Emisi (Ton CO2e)", color="Skenario", title="Perbandingan Total Emisi Karbon (Ton CO2e)"
-        ),
-        use_container_width=True
+        )
     )
-    g2.plotly_chart(
+    g1.plotly_chart(fig_comp_e, use_container_width=True)
+    fig_comp_c = style_plotly_fig(
         px.bar(
             pd.DataFrame([{"Skenario": "Skenario A (Baseline)", "Biaya (Rp)": ca_tot}, {"Skenario": "Skenario B (Hijau)", "Biaya (Rp)": cb_tot}]),
             x="Skenario", y="Biaya (Rp)", color="Skenario", title="Perbandingan Biaya Pengadaan Material (Rp)"
-        ),
-        use_container_width=True
+        )
     )
+    g2.plotly_chart(fig_comp_c, use_container_width=True)
 
 # ==========================================
 # MENU 5: SIKLUS HIDUP EMISI & SOLUSI (LCA)
@@ -1605,10 +1782,10 @@ elif menu == "📚 Siklus Hidup Emisi & Solusi":
             {"Modul LCA": "B1–B7: Tahap Operasional Gedung (50 Tahun)", "Kontribusi (%)": 60},
             {"Modul LCA": "C1–C4: Pembongkaran & Akhir Masa Layan", "Kontribusi (%)": 3}
         ])
-        st.plotly_chart(
-            px.pie(lca_df, names="Modul LCA", values="Kontribusi (%)", hole=0.45, title="Proporsi Siklus Hidup Karbon Bangunan Tipikal (50 Tahun)"),
-            use_container_width=True
+        fig_lca = style_plotly_fig(
+            px.pie(lca_df, names="Modul LCA", values="Kontribusi (%)", hole=0.45, title="Proporsi Siklus Hidup Karbon Bangunan Tipikal (50 Tahun)")
         )
+        st.plotly_chart(fig_lca, use_container_width=True)
 
     with c2:
         st.markdown("""
@@ -1646,7 +1823,7 @@ elif menu == "📚 Siklus Hidup Emisi & Solusi":
 
 st.markdown("---")
 st.markdown(
-    "<p style='text-align:center;color:#94a3b8;font-size:0.85rem;'>"
+    "<p style='text-align:center;color:color-mix(in srgb, var(--text-color) 62%, var(--background-color) 38%);font-size:0.85rem;padding:8px 0;'>"
     "EcoBuild Pro v2.1 • Civil Carbon & Cost Intelligence Platform • CV Kingsman IDN • "
     "Dosen Pembimbing: Dr. Ir. Dedy Firmansyah, S.Pd., M.T."
     "</p>",

@@ -57,6 +57,7 @@ def get_image_base64(fname):
 
 def get_existing_image(filenames):
     search_dirs = ["", "assets", "images", "img", "static"]
+    targets = [f.lower() for f in filenames if f]
     for d in search_dirs:
         for f in filenames:
             if not f:
@@ -64,6 +65,16 @@ def get_existing_image(filenames):
             cand = os.path.join(d, f) if d else f
             if os.path.exists(cand):
                 return cand
+        check_dir = d if d else "."
+        if os.path.isdir(check_dir):
+            try:
+                entries = os.listdir(check_dir)
+                for t in targets:
+                    for ent in entries:
+                        if ent.lower() == t:
+                            return os.path.join(d, ent) if d else ent
+            except Exception:
+                pass
     return None
 
 bg_url = get_image_base64(get_existing_image([
@@ -909,34 +920,79 @@ def find_green_alternative(df_ice, mat_name, cur_fe, lang_mode):
             }
     return None
 
-def smart_read_rab(fobj, fname):
-    df_raw = pd.read_csv(fobj, header=None) if fname.endswith(".csv") else pd.read_excel(fobj, header=None)
-    h_idx = None
-    for idx, row in df_raw.iterrows():
-        s = " ".join(str(v).lower() for v in row.values if pd.notna(v))
-        if any(k in s for k in ["material", "nama", "bahan", "uraian"]) and any(k in s for k in ["jumlah", "volume", "qty"]):
-            h_idx = idx
-            break
-    fobj.seek(0)
-    if h_idx is not None:
-        return pd.read_csv(fobj, header=h_idx) if fname.endswith(".csv") else pd.read_excel(fobj, header=h_idx)
-    return pd.read_csv(fobj) if fname.endswith(".csv") else pd.read_excel(fobj)
-
 def get_col_map(cols):
     cmap = {}
-    for c in [str(x).strip() for x in cols]:
-        cl = c.lower()
-        if "Material" not in cmap and any(k in cl for k in ["material", "nama", "bahan", "uraian"]):
-            cmap["Material"] = c
-        elif "Jumlah" not in cmap and "total" not in cl and any(k in cl for k in ["jumlah", "volume", "qty"]):
+    clean_cols = [str(x).strip() for x in cols]
+    exclude_mat = [
+        "sumber", "source", "kategori", "category", "jenis", "tipe", "type",
+        "kode", "code", "proyek", "project", "satuan", "unit", "harga", "price",
+        "faktor", "fe", "emisi", "co2", "total", "jumlah", "volume", "qty", "nomor"
+    ]
+    priority_exact = [
+        "nama material", "material name", "nama bahan", "uraian material",
+        "uraian pekerjaan", "deskripsi material", "item material",
+        "material", "bahan", "uraian", "item", "deskripsi"
+    ]
+
+    # Pass 1: Prioritaskan kolom nama material yang spesifik
+    for target in priority_exact:
+        for c in clean_cols:
+            cl = re.sub(r"\s+", " ", c.lower()).strip()
+            if any(ex in cl for ex in exclude_mat):
+                continue
+            if cl == target or target in cl:
+                cmap["Material"] = c
+                break
+        if "Material" in cmap:
+            break
+
+    # Pass 2: Fallback jika nama kolom mengandung kata kunci material/nama tanpa kata pengecualian
+    if "Material" not in cmap:
+        for c in clean_cols:
+            cl = re.sub(r"\s+", " ", c.lower()).strip()
+            if cl in ("no", "no.", "id") or any(ex in cl for ex in exclude_mat):
+                continue
+            if any(k in cl for k in ["material", "nama", "bahan", "uraian", "item", "deskripsi"]):
+                cmap["Material"] = c
+                break
+
+    for c in clean_cols:
+        cl = re.sub(r"\s+", " ", c.lower()).strip()
+        if "Sumber" not in cmap and ("sumber" in cl or "source" in cl):
+            cmap["Sumber"] = c
+        elif "Jumlah" not in cmap and "total" not in cl and any(k in cl for k in ["jumlah", "volume", "qty", "kuantitas"]):
             cmap["Jumlah"] = c
-        elif "Satuan" not in cmap and ("satuan" in cl or "unit" in cl) and "harga" not in cl:
+        elif "Satuan" not in cmap and ("satuan" in cl or "unit" in cl) and "harga" not in cl and "emisi" not in cl:
             cmap["Satuan"] = c
         elif "Faktor Emisi" not in cmap and "total" not in cl and any(k in cl for k in ["faktor", "fe", "emisi", "co2"]):
             cmap["Faktor Emisi"] = c
         elif "Harga Satuan" not in cmap and "total" not in cl and ("harga" in cl or "price" in cl or "hsp" in cl):
             cmap["Harga Satuan"] = c
     return cmap
+
+def smart_read_rab(fobj, fname):
+    is_csv = fname.lower().endswith(".csv")
+    if is_csv:
+        df_raw = pd.read_csv(fobj, header=None)
+        h_idx = None
+        for idx, row in df_raw.iterrows():
+            vals = [str(v).strip() for v in row.values if pd.notna(v)]
+            cm = get_col_map(vals)
+            if "Material" in cm and "Jumlah" in cm:
+                h_idx = idx
+                break
+        fobj.seek(0)
+        return pd.read_csv(fobj, header=h_idx) if h_idx is not None else pd.read_csv(fobj)
+
+    xl = pd.ExcelFile(fobj)
+    for sh in xl.sheet_names:
+        df_raw = xl.parse(sh, header=None)
+        for idx, row in df_raw.iterrows():
+            vals = [str(v).strip() for v in row.values if pd.notna(v)]
+            cm = get_col_map(vals)
+            if "Material" in cm and "Jumlah" in cm:
+                return xl.parse(sh, header=idx)
+    return xl.parse(xl.sheet_names[0])
 
 @st.cache_data
 def load_ice_db():
@@ -1333,26 +1389,41 @@ if menu == "🏠 Beranda":
     b4.button("📚 Panduan LCA (A1–D) ➔", use_container_width=True, on_click=go_page, args=("📚 Siklus Hidup Emisi & Solusi",))
 
     st.markdown("<br>", unsafe_allow_html=True)
-    with st.expander("🌐 Konteks & Urgensi Dekarbonisasi Sektor Konstruksi (BS EN 15978)", expanded=False):
-        c1, c2 = st.columns([1.15, 0.85])
+    with st.expander("🌐 Konteks Krisis Iklim, Karhutla & Urgensi Profesi Teknik Sipil (BS EN 15978)", expanded=True):
+        c1, c2 = st.columns(2)
         with c1:
+            st.markdown("#### 🏭 Emisi Sektor Konstruksi Global")
             st.write(
                 "Industri konstruksi dan bangunan menyumbang **~37–40% emisi karbon global**, dengan porsi signifikan berasal dari "
                 "**Embodied Carbon** pada produksi semen/beton, peleburan baja, dan transportasi material berat ke lokasi proyek."
             )
-            st.write(
-                "Melalui **EcoBuild Pro**, perencana struktur dan quantity surveyor dapat langsung mengevaluasi konsekuensi karbon dari "
-                "setiap pilihan spesifikasi teknis sebelum tahap pelaksanaan dimulai."
-            )
-            ig = get_existing_image(["gas_emisi.jpg", "gas_emisi.jpeg"])
+            ig = get_existing_image(["gas_emisi.jpg", "gas_emisi.jpeg", "gas_emisi.png", "gas_emisi.webp"])
             if ig:
                 st.image(ig, caption="Ilustrasi Emisi Industri & Konstruksi Global", use_container_width=True)
-        with c2:
             st.markdown("""
             <div class="lca-card">
-                <b>🌿 Target Net-Zero Ready Construction</b><br/><br/>
+                <b>🌿 Target Net-Zero Ready Construction</b><br/>
                 Optimalisasi desain sejak tahap RAB (Modul A1–A5) mampu memangkas hingga <b>30–55% Embodied Carbon</b>
                 melalui pemilihan beton campuran pozzolan/slag, baja daur ulang EAF, dan efisiensi rantai pasok lokal.
+            </div>
+            """, unsafe_allow_html=True)
+        with c2:
+            st.markdown("#### 🔥 Dampak Karhutla & Urgensi Profesi Teknik Sipil")
+            st.write(
+                "Pemanasan global memperparah bencana ekologis nyata seperti **kebakaran hutan dan lahan (Karhutla)**. "
+                "Kondisi ini menuntut **profesi Teknik Sipil** untuk tidak hanya fokus pada kekuatan struktur dan biaya, tetapi juga mengendalikan jejak karbon sejak tahap desain."
+            )
+            ik = get_existing_image([
+                "karhutla.jpg", "karhutla.jpeg", "karhutla.png", "karhutla.webp", "karhutla.avif",
+                "kebakaran_hutan.jpg", "kebakaran_hutan.jpeg", "kebakaran_hutan.png"
+            ])
+            if ik:
+                st.image(ik, caption="Dampak Krisis Iklim & Kebakaran Hutan/Lahan (Karhutla)", use_container_width=True)
+            st.markdown("""
+            <div class="lca-card">
+                <b>👷 Urgensi Profesi Teknik Sipil dalam Dekarbonisasi</b><br/>
+                Perencana struktur, estimator biaya (<i>quantity surveyor</i>), dan kontraktor memegang kendali langsung atas pemilihan spesifikasi material RAB.
+                Melalui <b>EcoBuild Pro</b>, setiap keputusan teknis dapat diaudit dampak karbonnya sebelum konstruksi dimulai untuk mendukung target <b>Net-Zero Emission 2060</b>.
             </div>
             """, unsafe_allow_html=True)
 
@@ -1391,37 +1462,61 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
                         df_rab = smart_read_rab(up, up.name)
                         cmap = get_col_map(df_rab.columns)
                         if "Material" in cmap and "Jumlah" in cmap:
-                            nr = min(30, len(df_rab))
-                            st.session_state["calc_num_items"] = nr
-                            st.session_state["input_num_items"] = nr
-                            lookup = {
-                                str(r[c]).strip().lower(): float(r["Faktor Emisi (kg CO2e/kg)"])
-                                for _, r in df_ice_materials.iterrows()
-                                for c in ["Nama Material (EN)", "Nama Material (ID)", "Nama Material (Bilingual)"]
-                            }
-                            for idx, row in df_rab.iloc[:nr].iterrows():
-                                mv = str(row[cmap["Material"]]).strip()
-                                qv = float(pd.to_numeric(row[cmap["Jumlah"]], errors='coerce') or 0)
-                                sv = str(row[cmap["Satuan"]]).strip() if "Satuan" in cmap and pd.notna(row[cmap["Satuan"]]) else "kg"
-                                fv = (
-                                    float(pd.to_numeric(row[cmap["Faktor Emisi"]], errors='coerce') or 1.0)
-                                    if "Faktor Emisi" in cmap and pd.notna(row[cmap["Faktor Emisi"]])
-                                    else lookup.get(mv.lower(), 1.0)
+                            invalid_names = {"", "nan", "none", "total", "jumlah", "subtotal", "grand total", "-"}
+                            valid_rows = []
+                            for _, row in df_rab.iterrows():
+                                raw_m = row[cmap["Material"]]
+                                if pd.isna(raw_m):
+                                    continue
+                                mv_clean = str(raw_m).strip()
+                                if mv_clean.lower() in invalid_names:
+                                    continue
+                                valid_rows.append(row)
+
+                            if not valid_rows:
+                                st.error("Tidak ditemukan baris material yang valid di dalam file RAB.")
+                            else:
+                                nr = min(100, len(valid_rows))
+                                st.session_state["calc_num_items"] = nr
+                                st.session_state["input_num_items"] = nr
+                                mcol_active = (
+                                    "Nama Material (EN)" if st.session_state["app_lang"] == "🇬🇧 English"
+                                    else ("Nama Material (Bilingual)" if "Bilingual" in st.session_state["app_lang"] else "Nama Material (ID)")
                                 )
-                                pv = (
-                                    float(pd.to_numeric(row[cmap["Harga Satuan"]], errors='coerce') or 10000.0)
-                                    if "Harga Satuan" in cmap and pd.notna(row[cmap["Harga Satuan"]])
-                                    else 12000.0
-                                )
-                                st.session_state[f"calc_sel_{idx}"] = "➕ Material Kustom (Isi Sendiri)"
-                                st.session_state[f"c_name_{idx}"] = mv
-                                st.session_state[f"c_unit_{idx}"] = sv
-                                st.session_state[f"c_fact_{idx}"] = fv
-                                st.session_state[f"c_price_{idx}"] = pv
-                                st.session_state[f"c_qty_{idx}"] = qv
-                            st.session_state["last_rab_id"] = fid
-                            st.success(f"✅ Berhasil memuat {nr} item material dari file RAB!")
-                            st.rerun()
+                                lookup = {}
+                                for _, r in df_ice_materials.iterrows():
+                                    for c in ["Nama Material (EN)", "Nama Material (ID)", "Nama Material (Bilingual)"]:
+                                        lookup[str(r[c]).strip().lower()] = (r[mcol_active], float(r["Faktor Emisi (kg CO2e/kg)"]))
+
+                                for idx, row in enumerate(valid_rows[:nr]):
+                                    mv = str(row[cmap["Material"]]).strip()
+                                    qv = float(pd.to_numeric(row[cmap["Jumlah"]], errors='coerce') or 0)
+                                    sv = str(row[cmap["Satuan"]]).strip() if "Satuan" in cmap and pd.notna(row[cmap["Satuan"]]) else "kg"
+                                    ice_hit = lookup.get(mv.lower())
+                                    fv = (
+                                        float(pd.to_numeric(row[cmap["Faktor Emisi"]], errors='coerce') or (ice_hit[1] if ice_hit else 1.0))
+                                        if "Faktor Emisi" in cmap and pd.notna(row[cmap["Faktor Emisi"]])
+                                        else (ice_hit[1] if ice_hit else 1.0)
+                                    )
+                                    pv = (
+                                        float(pd.to_numeric(row[cmap["Harga Satuan"]], errors='coerce') or 10000.0)
+                                        if "Harga Satuan" in cmap and pd.notna(row[cmap["Harga Satuan"]])
+                                        else 12000.0
+                                    )
+                                    if ice_hit:
+                                        st.session_state[f"calc_sel_{idx}"] = ice_hit[0]
+                                        st.session_state[f"p_val_{idx}"] = pv
+                                        st.session_state[f"q_val_{idx}"] = qv
+                                    else:
+                                        st.session_state[f"calc_sel_{idx}"] = "➕ Material Kustom (Isi Sendiri)"
+                                        st.session_state[f"c_name_{idx}"] = mv
+                                        st.session_state[f"c_unit_{idx}"] = sv
+                                        st.session_state[f"c_fact_{idx}"] = fv
+                                        st.session_state[f"c_price_{idx}"] = pv
+                                        st.session_state[f"c_qty_{idx}"] = qv
+                                st.session_state["last_rab_id"] = fid
+                                st.success(f"✅ Berhasil memuat {nr} item material dari kolom '{cmap['Material']}'!")
+                                st.rerun()
                         else:
                             st.error("Kolom 'Material' dan 'Jumlah/Volume' tidak terdeteksi di dalam file.")
                     except Exception as e:
@@ -1556,7 +1651,7 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
         st.session_state["input_num_items"] = int(st.session_state.get("calc_num_items", 3))
 
     def mod_rows(delta):
-        nxt = min(30, max(1, int(st.session_state.get("input_num_items", 3)) + delta))
+        nxt = min(100, max(1, int(st.session_state.get("input_num_items", 3)) + delta))
         st.session_state["input_num_items"] = nxt
         st.session_state["calc_num_items"] = nxt
 
@@ -1575,7 +1670,7 @@ elif menu == "🧮 Kalkulator & Analisis Proyek":
 
     c_n1, c_n2, c_n3 = st.columns([2, 1, 1])
     with c_n1:
-        num_items = st.number_input("🔢 Jumlah Jenis Material dalam RAB:", min_value=1, max_value=30, step=1, key="input_num_items")
+        num_items = st.number_input("🔢 Jumlah Jenis Material dalam RAB:", min_value=1, max_value=100, step=1, key="input_num_items")
         st.session_state["calc_num_items"] = num_items
     with c_n2:
         st.write("")

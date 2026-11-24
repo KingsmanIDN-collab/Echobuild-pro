@@ -71,7 +71,7 @@ bg_url = get_image_base64(get_existing_image([
 ])) or "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=1400"
 
 # ==========================================
-# CUSTOM CSS STYLING (ADAPTIVE LIGHT & DARK + READABLE TYPOGRAPHY SCALE)
+# CUSTOM CSS STYLING (SOLID EXECUTIVE UI + LARGE READABLE FONTS)
 # ==========================================
 st.markdown("""<style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -84,32 +84,34 @@ html, body, [class*="css"], .stApp {
     font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
 
-/* 60% DOMINANT NEUTRAL BACKGROUND (Nyaman di mata untuk Light & Dark Mode) */
-[data-testid="stAppViewContainer"] {
-    background-color: color-mix(in srgb, var(--background-color) 96%, #64748b 4%) !important;
+/* 60% DOMINANT NEUTRAL BACKGROUND (Light Mode Default) */
+[data-testid="stAppViewContainer"], .stApp {
+    background-color: #F1F5F9 !important;
+    color: #1E293B !important;
 }
 
 [data-testid="stHeader"] {
-    background-color: transparent !important;
+    background-color: rgba(241, 245, 249, 0.85) !important;
 }
 
 .block-container {
     padding-top: 2rem !important;
     padding-bottom: 3.5rem !important;
-    max-width: 1380px;
+    max-width: 1380px !important;
 }
 
-/* SKALA TIPOGRAFI GLOBAL YANG JELAS & PROPORSIONAL (LAPTOP & PROYEKTOR) */
+/* SKALA TIPOGRAFI BESAR & JELAS UNTUK PRESENTASI */
 [data-testid="stMarkdownContainer"] p,
 [data-testid="stMarkdownContainer"] li {
     font-size: 1rem !important;
     line-height: 1.62 !important;
-    color: color-mix(in srgb, var(--text-color) 90%, var(--background-color) 10%);
+    color: #1E293B;
 }
 
 [data-testid="stMarkdownContainer"] h1 {
     font-size: 2.15rem !important;
     font-weight: 800 !important;
+    color: #0F172A !important;
     letter-spacing: -0.02em;
     margin-bottom: 0.75rem !important;
 }
@@ -117,6 +119,7 @@ html, body, [class*="css"], .stApp {
 [data-testid="stMarkdownContainer"] h2 {
     font-size: 1.55rem !important;
     font-weight: 700 !important;
+    color: #0F172A !important;
     letter-spacing: -0.01em;
     margin-top: 0.5rem !important;
     margin-bottom: 0.75rem !important;
@@ -126,11 +129,13 @@ html, body, [class*="css"], .stApp {
 [data-testid="stMarkdownContainer"] h4 {
     font-size: 1.25rem !important;
     font-weight: 700 !important;
+    color: #0F172A !important;
     margin-bottom: 0.65rem !important;
 }
 
 [data-testid="stCaptionContainer"] p {
-    font-size: 0.9rem !important;
+    font-size: 0.92rem !important;
+    color: #475569 !important;
 }
 
 /* LABEL WIDGET, INPUT, SELECTBOX, EXPANDER & TAB */
@@ -142,6 +147,16 @@ html, body, [class*="css"], .stApp {
 .stFileUploader label p {
     font-size: 0.96rem !important;
     font-weight: 600 !important;
+    color: #0F172A !important;
+}
+
+input[type="text"],
+input[type="number"],
+div[data-baseweb="select"] > div {
+    background-color: #FFFFFF !important;
+    border: 1px solid #CBD5E1 !important;
+    border-radius: 8px !important;
+    color: #0F172A !important;
 }
 
 input[type="text"],
@@ -149,17 +164,20 @@ input[type="number"],
 div[data-baseweb="select"] span,
 div[data-baseweb="select"] div {
     font-size: 0.98rem !important;
+    color: #0F172A !important;
 }
 
 [data-testid="stExpander"] {
-    background-color: color-mix(in srgb, var(--background-color) 98%, var(--secondary-background-color) 2%) !important;
-    border: 1px solid color-mix(in srgb, var(--text-color) 14%, transparent) !important;
+    background-color: #FFFFFF !important;
+    border: 1px solid #CBD5E1 !important;
     border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
 }
 
 [data-testid="stExpander"] summary p {
     font-size: 1.02rem !important;
     font-weight: 600 !important;
+    color: #0F172A !important;
 }
 
 button[data-baseweb="tab"] p {
@@ -167,64 +185,92 @@ button[data-baseweb="tab"] p {
     font-weight: 600 !important;
 }
 
+[data-testid="stAlert"] {
+    border-radius: 12px !important;
+}
+
 [data-testid="stAlert"] p {
     font-size: 0.96rem !important;
     line-height: 1.55 !important;
 }
 
-/* TOMBOL (8px Grid & Radius 8px) */
+/* TOMBOL TERSTRUKTUR (8px Grid & Radius 8px) */
 .stButton > button,
 .stDownloadButton > button {
+    background-color: #FFFFFF !important;
+    color: #0F172A !important;
+    border: 1px solid #CBD5E1 !important;
     font-size: 0.96rem !important;
     font-weight: 600 !important;
     border-radius: 8px !important;
     padding: 0.55rem 1rem !important;
     min-height: 44px !important;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05) !important;
     transition: all 0.2s ease !important;
 }
 
 .stButton > button:hover,
 .stDownloadButton > button:hover {
+    background-color: #ECFDF5 !important;
+    border-color: #059669 !important;
+    color: #065F46 !important;
     transform: translateY(-1px);
 }
 
+.stButton > button[kind="primary"] {
+    background-color: #059669 !important;
+    color: #FFFFFF !important;
+    border: 1px solid #047857 !important;
+}
+
+.stButton > button[kind="primary"]:hover {
+    background-color: #047857 !important;
+    color: #FFFFFF !important;
+}
+
 /* METRIC NATIVE STREAMLIT */
+[data-testid="stMetric"] {
+    background-color: #FFFFFF !important;
+    border: 1px solid #CBD5E1 !important;
+    border-radius: 12px !important;
+    padding: 16px 18px !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05) !important;
+}
+
 [data-testid="stMetricLabel"] p {
     font-size: 0.95rem !important;
     font-weight: 600 !important;
+    color: #475569 !important;
 }
 
 [data-testid="stMetricValue"] {
     font-size: 2rem !important;
     font-weight: 800 !important;
+    color: #0F172A !important;
 }
 
 [data-testid="stMetricDelta"] {
     font-size: 0.92rem !important;
 }
 
-/* HERO BANNER ADAPTIF (Menyatu di Light Mode & Dark Mode) */
+/* HERO BANNER EKSEKUTIF (Kontras Tajam + Gambar Latar Terlihat) */
 .hero-box {
     background:
-        linear-gradient(
-            135deg,
-            color-mix(in srgb, var(--background-color) 84%, #10b981 16%) 0%,
-            color-mix(in srgb, var(--background-color) 91%, #0284c7 9%) 100%
-        ),
+        linear-gradient(135deg, rgba(6, 78, 59, 0.93) 0%, rgba(15, 23, 42, 0.90) 100%),
         url('__BG_URL__');
     background-size: cover;
     background-position: center;
-    padding: 40px 36px;
+    padding: 42px 38px;
     border-radius: 16px;
-    color: var(--text-color) !important;
+    color: #FFFFFF !important;
     margin-bottom: 24px;
-    box-shadow: 0 12px 28px -12px rgba(15, 23, 42, 0.14);
-    border: 1px solid color-mix(in srgb, #10b981 28%, transparent);
+    box-shadow: 0 16px 32px -12px rgba(6, 78, 59, 0.35);
+    border: 1px solid rgba(16, 185, 129, 0.35);
 }
 
 .hero-badge {
-    background: color-mix(in srgb, #10b981 18%, var(--background-color) 82%);
-    color: color-mix(in srgb, var(--text-color) 75%, #059669 25%) !important;
+    background: rgba(16, 185, 129, 0.24);
+    color: #6EE7B7 !important;
     padding: 8px 16px;
     border-radius: 20px;
     font-size: 0.9rem !important;
@@ -232,7 +278,7 @@ button[data-baseweb="tab"] p {
     letter-spacing: 0.3px;
     display: inline-block;
     margin-bottom: 16px;
-    border: 1px solid color-mix(in srgb, #10b981 35%, transparent);
+    border: 1px solid rgba(110, 231, 183, 0.45);
 }
 
 .hero-title {
@@ -240,12 +286,12 @@ button[data-baseweb="tab"] p {
     font-weight: 800;
     margin-bottom: 12px;
     line-height: 1.18;
-    color: var(--text-color) !important;
+    color: #FFFFFF !important;
 }
 
 .hero-sub {
     font-size: 1.12rem !important;
-    color: color-mix(in srgb, var(--text-color) 85%, var(--background-color) 15%) !important;
+    color: #E2E8F0 !important;
     max-width: 920px;
     line-height: 1.65;
     margin-bottom: 22px;
@@ -259,52 +305,53 @@ button[data-baseweb="tab"] p {
 }
 
 .hero-pill-item {
-    background: color-mix(in srgb, var(--background-color) 88%, var(--secondary-background-color) 12%);
-    border: 1px solid color-mix(in srgb, var(--text-color) 16%, transparent);
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.25);
     padding: 8px 16px;
     border-radius: 10px;
     font-size: 0.92rem !important;
     font-weight: 600;
-    color: var(--text-color) !important;
+    color: #F8FAFC !important;
 }
 
-/* 30% STRUKTUR KARTU ADAPTIF (Radius 12px, Border Halus 1px, Hover Halus) */
+/* 30% STRUKTUR KARTU PUTIH SOLID (Border Tegas, Shadow Halus, Radius 12px) */
 .feature-card {
-    background-color: color-mix(in srgb, var(--background-color) 98%, var(--secondary-background-color) 2%);
-    color: var(--text-color);
+    background-color: #FFFFFF !important;
+    color: #1E293B !important;
     border-radius: 12px;
     padding: 22px 20px;
-    border: 1px solid color-mix(in srgb, var(--text-color) 14%, transparent);
-    box-shadow: 0 6px 18px -8px rgba(15, 23, 42, 0.10);
+    border: 1px solid #CBD5E1;
+    box-shadow: 0 6px 18px -6px rgba(15, 23, 42, 0.08);
     height: 100%;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .feature-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 24px -10px rgba(16, 185, 129, 0.22);
+    transform: translateY(-3px);
+    border-color: #10B981;
+    box-shadow: 0 12px 24px -8px rgba(16, 185, 129, 0.22);
 }
 
 .feature-title {
     font-size: 1.15rem !important;
     font-weight: 700;
-    color: #059669;
+    color: #059669 !important;
     margin-bottom: 8px;
 }
 
 .feature-desc {
     font-size: 0.96rem !important;
-    color: color-mix(in srgb, var(--text-color) 86%, var(--background-color) 14%);
+    color: #334155 !important;
     line-height: 1.58;
 }
 
 .metric-card {
-    background-color: color-mix(in srgb, var(--background-color) 98%, var(--secondary-background-color) 2%);
-    color: var(--text-color);
+    background-color: #FFFFFF !important;
+    color: #0F172A !important;
     border-radius: 12px;
     padding: 20px;
-    border: 1px solid color-mix(in srgb, var(--text-color) 14%, transparent);
-    box-shadow: 0 8px 20px -8px rgba(15, 23, 42, 0.10);
+    border: 1px solid #CBD5E1;
+    box-shadow: 0 8px 20px -6px rgba(15, 23, 42, 0.08);
     transition: transform 0.2s ease;
 }
 
@@ -312,114 +359,111 @@ button[data-baseweb="tab"] p {
     transform: translateY(-2px);
 }
 
-.m-opt { border-top: 5px solid #10b981; background: linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, var(--background-color) 100%); }
-.m-mod { border-top: 5px solid #f59e0b; background: linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, var(--background-color) 100%); }
-.m-crit { border-top: 5px solid #ef4444; background: linear-gradient(180deg, rgba(239, 68, 68, 0.12) 0%, var(--background-color) 100%); }
-.m-fin { border-top: 5px solid #2563eb; background: linear-gradient(180deg, rgba(37, 99, 235, 0.12) 0%, var(--background-color) 100%); }
-.m-eff { border-top: 5px solid #7c3aed; background: linear-gradient(180deg, rgba(124, 58, 237, 0.12) 0%, var(--background-color) 100%); }
-.m-int { border-top: 5px solid #0d9488; background: linear-gradient(180deg, rgba(13, 148, 136, 0.12) 0%, var(--background-color) 100%); }
+.m-opt { border-top: 5px solid #10B981; background: linear-gradient(180deg, #ECFDF5 0%, #FFFFFF 55%) !important; }
+.m-mod { border-top: 5px solid #F59E0B; background: linear-gradient(180deg, #FFFBEB 0%, #FFFFFF 55%) !important; }
+.m-crit { border-top: 5px solid #EF4444; background: linear-gradient(180deg, #FEF2F2 0%, #FFFFFF 55%) !important; }
+.m-fin { border-top: 5px solid #2563EB; background: linear-gradient(180deg, #EFF6FF 0%, #FFFFFF 55%) !important; }
+.m-eff { border-top: 5px solid #7C3AED; background: linear-gradient(180deg, #F5F3FF 0%, #FFFFFF 55%) !important; }
+.m-int { border-top: 5px solid #0D9488; background: linear-gradient(180deg, #F0FDFA 0%, #FFFFFF 55%) !important; }
 
 .m-lbl {
     font-size: 0.88rem !important;
     font-weight: 700;
     letter-spacing: 0.3px;
-    color: color-mix(in srgb, var(--text-color) 82%, var(--background-color) 18%);
+    color: #475569 !important;
 }
 
 .m-val {
     font-size: 1.95rem !important;
     font-weight: 800;
-    color: var(--text-color);
+    color: #0F172A !important;
     margin: 8px 0;
 }
 
 .m-sub {
     font-size: 0.88rem !important;
-    color: color-mix(in srgb, var(--text-color) 82%, var(--background-color) 18%);
-    border-top: 1px dashed color-mix(in srgb, var(--text-color) 22%, transparent);
+    color: #475569 !important;
+    border-top: 1px dashed #CBD5E1;
     padding-top: 8px;
     margin-top: 8px;
 }
 
-/* 30% SIDEBAR ADAPTIF (Sinkron Otomatis di Light Mode & Dark Mode) */
+/* 30% SIDEBAR TERSTRUKTUR (Menyatu dengan Latar Slate Terang) */
 section[data-testid="stSidebar"] {
-    background-color: color-mix(in srgb, var(--background-color) 91%, #475569 9%) !important;
-    border-right: 1px solid color-mix(in srgb, var(--text-color) 12%, transparent) !important;
+    background: linear-gradient(180deg, #F8FAFC 0%, #E2E8F0 100%) !important;
+    border-right: 1px solid #CBD5E1 !important;
 }
 
 section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
 section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p,
 section[data-testid="stSidebar"] label,
 section[data-testid="stSidebar"] .stRadio label span {
-    color: var(--text-color) !important;
+    color: #0F172A !important;
     font-size: 0.96rem !important;
+    font-weight: 500;
 }
 
 section[data-testid="stSidebar"] .stRadio label {
-    padding-top: 3px !important;
-    padding-bottom: 3px !important;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
 }
 
 section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
-    background-color: var(--background-color) !important;
-    border: 1px solid color-mix(in srgb, var(--text-color) 20%, transparent) !important;
+    background-color: #FFFFFF !important;
+    border: 1px solid #CBD5E1 !important;
     border-radius: 8px !important;
 }
 
-section[data-testid="stSidebar"] div[data-baseweb="select"] span,
-section[data-testid="stSidebar"] div[data-baseweb="select"] div {
-    color: var(--text-color) !important;
-    font-size: 0.95rem !important;
-}
-
 .sb-card {
-    background-color: var(--background-color);
-    border: 1px solid color-mix(in srgb, var(--text-color) 14%, transparent);
+    background-color: #FFFFFF !important;
+    border: 1px solid #CBD5E1;
     border-radius: 12px;
     padding: 18px 14px;
     text-align: center;
     margin-bottom: 16px;
-    color: var(--text-color) !important;
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+    color: #0F172A !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
 }
 
 .sb-info-card {
-    background: color-mix(in srgb, #10b981 12%, var(--background-color) 88%);
-    border: 1px solid color-mix(in srgb, #10b981 35%, transparent);
+    background-color: #ECFDF5 !important;
+    border: 1px solid #6EE7B7;
     border-radius: 12px;
     padding: 16px;
     font-size: 0.92rem !important;
     line-height: 1.6;
-    color: var(--text-color) !important;
+    color: #064E3B !important;
     margin-top: 8px;
 }
 
 .sb-info-card b {
-    color: #059669 !important;
+    color: #047857 !important;
 }
 
-/* KARTU ITEM MATERIAL & SUBTOTAL (Adaptif Light & Dark Mode) */
+/* KARTU ITEM MATERIAL & SUBTOTAL */
 .mat-bar {
-    background-color: color-mix(in srgb, var(--background-color) 97%, var(--secondary-background-color) 3%);
-    color: var(--text-color);
-    border: 1px solid color-mix(in srgb, var(--text-color) 16%, transparent);
-    border-bottom: none;
-    border-radius: 12px 12px 0 0;
+    background-color: #FFFFFF !important;
+    color: #0F172A !important;
+    border: 1px solid #CBD5E1;
+    border-left: 5px solid #059669;
+    border-radius: 12px;
     padding: 12px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-top: 16px;
+    margin-bottom: 10px;
     font-size: 1.02rem !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
 }
 
 .mat-bar b {
-    color: var(--text-color);
+    color: #0F172A !important;
 }
 
 .mat-pill {
     background: #059669;
-    color: #ffffff !important;
+    color: #FFFFFF !important;
     font-size: 0.84rem !important;
     font-weight: 700;
     padding: 4px 12px;
@@ -428,9 +472,9 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] div {
 }
 
 .mat-badge-src {
-    background: color-mix(in srgb, #10b981 14%, var(--background-color) 86%);
-    color: #059669;
-    border: 1px solid color-mix(in srgb, #10b981 35%, transparent);
+    background: #ECFDF5;
+    color: #047857 !important;
+    border: 1px solid #6EE7B7;
     font-size: 0.84rem !important;
     font-weight: 700;
     padding: 4px 12px;
@@ -438,9 +482,9 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] div {
 }
 
 .sub-pill {
-    background-color: color-mix(in srgb, var(--background-color) 97%, var(--secondary-background-color) 3%);
-    color: var(--text-color);
-    border: 1px solid color-mix(in srgb, var(--text-color) 16%, transparent);
+    background-color: #FFFFFF !important;
+    color: #0F172A !important;
+    border: 1px solid #CBD5E1;
     border-radius: 10px;
     padding: 12px 16px;
     margin-top: 8px;
@@ -452,24 +496,24 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] div {
 }
 
 .sub-pill span, .sub-pill b {
-    color: var(--text-color);
+    color: #0F172A !important;
 }
 
 .eco-box {
-    background: color-mix(in srgb, #10b981 12%, var(--background-color) 88%);
-    border: 1px solid color-mix(in srgb, #10b981 40%, transparent);
+    background-color: #ECFDF5 !important;
+    border: 1px solid #6EE7B7;
     border-left: 5px solid #059669;
     border-radius: 12px;
     padding: 12px 16px;
     margin-top: 8px;
     font-size: 0.95rem !important;
-    color: var(--text-color);
+    color: #064E3B !important;
     line-height: 1.55;
 }
 
 .eco-box code {
-    background: color-mix(in srgb, #10b981 22%, var(--background-color) 78%) !important;
-    color: var(--text-color) !important;
+    background-color: #D1FAE5 !important;
+    color: #065F46 !important;
     padding: 2px 8px;
     border-radius: 6px;
     font-weight: 700;
@@ -477,20 +521,83 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] div {
 }
 
 .lca-card {
-    background-color: color-mix(in srgb, var(--background-color) 98%, var(--secondary-background-color) 2%);
-    color: var(--text-color);
-    border: 1px solid color-mix(in srgb, var(--text-color) 14%, transparent);
+    background-color: #FFFFFF !important;
+    color: #1E293B !important;
+    border: 1px solid #CBD5E1;
     border-left: 5px solid #059669;
     border-radius: 12px;
     padding: 18px 20px;
     margin-bottom: 14px;
     font-size: 0.96rem !important;
     line-height: 1.6;
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
 }
 
 .lca-card b {
     font-size: 1.06rem !important;
+    color: #0F172A !important;
+}
+
+/* DUKUNGAN DARK MODE OTOMATIS (Jika Sistem/Browser Pengguna Gelap) */
+@media (prefers-color-scheme: dark) {
+    [data-testid="stAppViewContainer"], .stApp {
+        background-color: #0F172A !important;
+        color: #F1F5F9 !important;
+    }
+    [data-testid="stHeader"] {
+        background-color: rgba(15, 23, 42, 0.85) !important;
+    }
+    [data-testid="stMarkdownContainer"] p,
+    [data-testid="stMarkdownContainer"] li {
+        color: #E2E8F0 !important;
+    }
+    [data-testid="stMarkdownContainer"] h1,
+    [data-testid="stMarkdownContainer"] h2,
+    [data-testid="stMarkdownContainer"] h3,
+    [data-testid="stMarkdownContainer"] h4,
+    [data-testid="stWidgetLabel"] p,
+    .stNumberInput label p,
+    .stTextInput label p,
+    .stSelectbox label p,
+    .stSlider label p,
+    .stFileUploader label p {
+        color: #F8FAFC !important;
+    }
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #0B1120 0%, #1E293B 100%) !important;
+        border-right: 1px solid #334155 !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+    section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p,
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] .stRadio label span {
+        color: #F1F5F9 !important;
+    }
+    .feature-card, .metric-card, .mat-bar, .sub-pill, .lca-card, .sb-card,
+    [data-testid="stExpander"], [data-testid="stMetric"],
+    .stButton > button, .stDownloadButton > button,
+    input[type="text"], input[type="number"], div[data-baseweb="select"] > div {
+        background-color: #1E293B !important;
+        border-color: #334155 !important;
+        color: #F8FAFC !important;
+    }
+    input[type="text"], input[type="number"],
+    div[data-baseweb="select"] span, div[data-baseweb="select"] div,
+    .feature-desc, .m-lbl, .m-val, .m-sub, .mat-bar b, .sub-pill span, .sub-pill b,
+    .lca-card b, [data-testid="stMetricValue"], [data-testid="stExpander"] summary p {
+        color: #F8FAFC !important;
+    }
+    .sb-info-card, .eco-box {
+        background-color: rgba(16, 185, 129, 0.15) !important;
+        border-color: rgba(52, 211, 153, 0.4) !important;
+        color: #ECFDF5 !important;
+    }
+    .m-opt { background: linear-gradient(180deg, rgba(16, 185, 129, 0.18) 0%, #1E293B 65%) !important; }
+    .m-mod { background: linear-gradient(180deg, rgba(245, 158, 11, 0.18) 0%, #1E293B 65%) !important; }
+    .m-crit { background: linear-gradient(180deg, rgba(239, 68, 68, 0.18) 0%, #1E293B 65%) !important; }
+    .m-fin { background: linear-gradient(180deg, rgba(37, 99, 235, 0.18) 0%, #1E293B 65%) !important; }
+    .m-eff { background: linear-gradient(180deg, rgba(124, 58, 237, 0.18) 0%, #1E293B 65%) !important; }
+    .m-int { background: linear-gradient(180deg, rgba(13, 148, 136, 0.18) 0%, #1E293B 65%) !important; }
 }
 </style>""".replace("__BG_URL__", bg_url), unsafe_allow_html=True)
 

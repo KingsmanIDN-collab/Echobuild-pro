@@ -71,7 +71,7 @@ bg_url = get_image_base64(get_existing_image([
 ])) or "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=1400"
 
 # ==========================================
-# CUSTOM CSS STYLING (SOLID EXECUTIVE UI + LARGE READABLE FONTS)
+# CUSTOM CSS STYLING (100% CONSISTENT LIGHT & DARK UI + LARGE FONTS)
 # ==========================================
 st.markdown("""<style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -138,7 +138,7 @@ html, body, [class*="css"], .stApp {
     color: #475569 !important;
 }
 
-/* LABEL WIDGET, INPUT, SELECTBOX, EXPANDER & TAB */
+/* LABEL WIDGET, INPUT, STEPPER, SELECTBOX, EXPANDER & TAB */
 [data-testid="stWidgetLabel"] p,
 .stNumberInput label p,
 .stTextInput label p,
@@ -150,13 +150,17 @@ html, body, [class*="css"], .stApp {
     color: #0F172A !important;
 }
 
-input[type="text"],
-input[type="number"],
+div[data-baseweb="input"],
+div[data-baseweb="base-input"],
 div[data-baseweb="select"] > div {
     background-color: #FFFFFF !important;
     border: 1px solid #CBD5E1 !important;
     border-radius: 8px !important;
     color: #0F172A !important;
+}
+
+div[data-baseweb="select"] div {
+    background-color: transparent !important;
 }
 
 input[type="text"],
@@ -165,6 +169,14 @@ div[data-baseweb="select"] span,
 div[data-baseweb="select"] div {
     font-size: 0.98rem !important;
     color: #0F172A !important;
+}
+
+[data-testid="stNumberInput"] button,
+button[data-testid="stNumberInputStepDown"],
+button[data-testid="stNumberInputStepUp"] {
+    background-color: #F8FAFC !important;
+    color: #0F172A !important;
+    border-left: 1px solid #CBD5E1 !important;
 }
 
 [data-testid="stExpander"] {
@@ -186,12 +198,25 @@ button[data-baseweb="tab"] p {
 }
 
 [data-testid="stAlert"] {
+    background-color: #EFF6FF !important;
+    border: 1px solid #BFDBFE !important;
     border-radius: 12px !important;
+    color: #1E3A8A !important;
 }
 
-[data-testid="stAlert"] p {
+[data-testid="stAlert"] p,
+[data-testid="stAlert"] span {
     font-size: 0.96rem !important;
     line-height: 1.55 !important;
+    color: #1E3A8A !important;
+}
+
+[data-testid="stAlert"] code {
+    background-color: #DBEAFE !important;
+    color: #1D4ED8 !important;
+    padding: 2px 8px !important;
+    border-radius: 6px !important;
+    font-weight: 700 !important;
 }
 
 /* TOMBOL TERSTRUKTUR (8px Grid & Radius 8px) */
@@ -253,7 +278,7 @@ button[data-baseweb="tab"] p {
     font-size: 0.92rem !important;
 }
 
-/* HERO BANNER EKSEKUTIF (Kontras Tajam + Gambar Latar Terlihat) */
+/* HERO BANNER EKSEKUTIF */
 .hero-box {
     background:
         linear-gradient(135deg, rgba(6, 78, 59, 0.93) 0%, rgba(15, 23, 42, 0.90) 100%),
@@ -314,7 +339,7 @@ button[data-baseweb="tab"] p {
     color: #F8FAFC !important;
 }
 
-/* 30% STRUKTUR KARTU PUTIH SOLID (Border Tegas, Shadow Halus, Radius 12px) */
+/* 30% STRUKTUR KARTU PUTIH SOLID */
 .feature-card {
     background-color: #FFFFFF !important;
     color: #1E293B !important;
@@ -388,7 +413,7 @@ button[data-baseweb="tab"] p {
     margin-top: 8px;
 }
 
-/* 30% SIDEBAR TERSTRUKTUR (Menyatu dengan Latar Slate Terang) */
+/* 30% SIDEBAR TERSTRUKTUR */
 section[data-testid="stSidebar"] {
     background: linear-gradient(180deg, #F8FAFC 0%, #E2E8F0 100%) !important;
     border-right: 1px solid #CBD5E1 !important;
@@ -479,6 +504,7 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
     font-weight: 700;
     padding: 4px 12px;
     border-radius: 8px;
+    white-space: nowrap;
 }
 
 .sub-pill {
@@ -538,14 +564,16 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
     color: #0F172A !important;
 }
 
-/* DUKUNGAN DARK MODE OTOMATIS (Jika Sistem/Browser Pengguna Gelap) */
+/* =====================================================================
+   DARK MODE COMPLETE PARITY (Mencegah Kotak Putih & Teks Redup)
+   ===================================================================== */
 @media (prefers-color-scheme: dark) {
     [data-testid="stAppViewContainer"], .stApp {
         background-color: #0F172A !important;
         color: #F1F5F9 !important;
     }
     [data-testid="stHeader"] {
-        background-color: rgba(15, 23, 42, 0.85) !important;
+        background-color: rgba(15, 23, 42, 0.88) !important;
     }
     [data-testid="stMarkdownContainer"] p,
     [data-testid="stMarkdownContainer"] li {
@@ -563,6 +591,9 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
     .stFileUploader label p {
         color: #F8FAFC !important;
     }
+    [data-testid="stCaptionContainer"] p {
+        color: #94A3B8 !important;
+    }
     section[data-testid="stSidebar"] {
         background: linear-gradient(180deg, #0B1120 0%, #1E293B 100%) !important;
         border-right: 1px solid #334155 !important;
@@ -573,24 +604,105 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
     section[data-testid="stSidebar"] .stRadio label span {
         color: #F1F5F9 !important;
     }
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
+        background-color: #1E293B !important;
+        border-color: #334155 !important;
+    }
+    /* Semua Kartu, Expander, Metric, Tombol & Kotak Input */
     .feature-card, .metric-card, .mat-bar, .sub-pill, .lca-card, .sb-card,
     [data-testid="stExpander"], [data-testid="stMetric"],
     .stButton > button, .stDownloadButton > button,
-    input[type="text"], input[type="number"], div[data-baseweb="select"] > div {
+    div[data-baseweb="input"], div[data-baseweb="base-input"],
+    div[data-baseweb="select"] > div {
         background-color: #1E293B !important;
         border-color: #334155 !important;
         color: #F8FAFC !important;
     }
+    .stButton > button:hover, .stDownloadButton > button:hover {
+        background-color: #263349 !important;
+        border-color: #10B981 !important;
+        color: #6EE7B7 !important;
+    }
+    .stButton > button[kind="primary"] {
+        background-color: #059669 !important;
+        border-color: #10B981 !important;
+        color: #FFFFFF !important;
+    }
+    /* Stepper + / - pada Number Input */
+    [data-testid="stNumberInput"] button,
+    button[data-testid="stNumberInputStepDown"],
+    button[data-testid="stNumberInputStepUp"] {
+        background-color: #263349 !important;
+        color: #F8FAFC !important;
+        border-left: 1px solid #334155 !important;
+    }
+    [data-testid="stNumberInput"] button:hover {
+        background-color: #334155 !important;
+        color: #6EE7B7 !important;
+    }
+    [data-testid="stNumberInput"] button svg,
+    div[data-baseweb="select"] svg {
+        fill: #F8FAFC !important;
+        color: #F8FAFC !important;
+    }
+    /* Dropdown Menu Popup */
+    div[data-baseweb="popover"],
+    ul[data-baseweb="menu"],
+    li[role="option"] {
+        background-color: #1E293B !important;
+        color: #F8FAFC !important;
+        border-color: #334155 !important;
+    }
+    li[role="option"]:hover,
+    li[aria-selected="true"] {
+        background-color: #263349 !important;
+        color: #6EE7B7 !important;
+    }
+    /* Alert Box (st.info, st.success, st.warning, st.error) */
+    [data-testid="stAlert"] {
+        background-color: #1E293B !important;
+        border: 1px solid #334155 !important;
+        color: #E2E8F0 !important;
+    }
+    [data-testid="stAlert"] p,
+    [data-testid="stAlert"] span {
+        color: #E2E8F0 !important;
+    }
+    [data-testid="stAlert"] code {
+        background-color: rgba(16, 185, 129, 0.2) !important;
+        color: #6EE7B7 !important;
+        border: 1px solid rgba(52, 211, 153, 0.35) !important;
+    }
+    /* Badge DATABASE ICE, Eco-Box Code & Sidebar Info Card */
+    .mat-badge-src {
+        background-color: rgba(16, 185, 129, 0.16) !important;
+        color: #6EE7B7 !important;
+        border: 1px solid rgba(52, 211, 153, 0.4) !important;
+    }
+    .sb-info-card {
+        background-color: rgba(6, 78, 59, 0.38) !important;
+        border-color: rgba(52, 211, 153, 0.38) !important;
+        color: #E2E8F0 !important;
+    }
+    .sb-info-card b {
+        color: #6EE7B7 !important;
+    }
+    .eco-box {
+        background-color: rgba(6, 78, 59, 0.38) !important;
+        border-color: rgba(52, 211, 153, 0.42) !important;
+        color: #ECFDF5 !important;
+    }
+    .eco-box code {
+        background-color: rgba(6, 78, 59, 0.9) !important;
+        color: #6EE7B7 !important;
+        border: 1px solid rgba(52, 211, 153, 0.45) !important;
+    }
     input[type="text"], input[type="number"],
     div[data-baseweb="select"] span, div[data-baseweb="select"] div,
     .feature-desc, .m-lbl, .m-val, .m-sub, .mat-bar b, .sub-pill span, .sub-pill b,
-    .lca-card b, [data-testid="stMetricValue"], [data-testid="stExpander"] summary p {
+    .lca-card b, [data-testid="stMetricValue"], [data-testid="stMetricLabel"] p,
+    [data-testid="stExpander"] summary p {
         color: #F8FAFC !important;
-    }
-    .sb-info-card, .eco-box {
-        background-color: rgba(16, 185, 129, 0.15) !important;
-        border-color: rgba(52, 211, 153, 0.4) !important;
-        color: #ECFDF5 !important;
     }
     .m-opt { background: linear-gradient(180deg, rgba(16, 185, 129, 0.18) 0%, #1E293B 65%) !important; }
     .m-mod { background: linear-gradient(180deg, rgba(245, 158, 11, 0.18) 0%, #1E293B 65%) !important; }
@@ -830,7 +942,7 @@ def load_ice_db():
                 if not vals:
                     continue
                 fval = str(vals[0]).strip()
-                if len(vals) == 1 and not fval.startswith(("http", "Module", "Note")):
+                if len(vals) == 1 and len(fval) <= 60 and not fval.startswith(("http", "Module", "Note", "The data")) and "section includes" not in fval.lower():
                     cur_cat = fval
                     continue
                 fname = str(row.iloc[19]).strip() if len(row) > 19 and pd.notna(row.iloc[19]) else (

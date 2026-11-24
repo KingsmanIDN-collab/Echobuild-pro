@@ -159,7 +159,8 @@ div[data-baseweb="select"] > div {
     color: #0F172A !important;
 }
 
-div[data-baseweb="select"] div {
+div[data-baseweb="select"] > div > div,
+div[data-baseweb="base-input"] > input {
     background-color: transparent !important;
 }
 
@@ -197,9 +198,11 @@ button[data-baseweb="tab"] p {
     font-weight: 600 !important;
 }
 
-[data-testid="stAlert"] {
+[data-testid="stAlert"],
+[data-testid="stAlert"] > div,
+div[data-baseweb="notification"] {
     background-color: #EFF6FF !important;
-    border: 1px solid #BFDBFE !important;
+    border-color: #BFDBFE !important;
     border-radius: 12px !important;
     color: #1E3A8A !important;
 }
@@ -565,7 +568,7 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
 }
 
 /* =====================================================================
-   DARK MODE COMPLETE PARITY (Mencegah Kotak Putih & Teks Redup)
+   DARK MODE COMPLETE PARITY (Menimpa seluruh elemen & sub-elemen anak)
    ===================================================================== */
 @media (prefers-color-scheme: dark) {
     [data-testid="stAppViewContainer"], .stApp {
@@ -608,12 +611,10 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
         background-color: #1E293B !important;
         border-color: #334155 !important;
     }
-    /* Semua Kartu, Expander, Metric, Tombol & Kotak Input */
+    /* Semua Kartu, Expander, Metric, Tombol */
     .feature-card, .metric-card, .mat-bar, .sub-pill, .lca-card, .sb-card,
     [data-testid="stExpander"], [data-testid="stMetric"],
-    .stButton > button, .stDownloadButton > button,
-    div[data-baseweb="input"], div[data-baseweb="base-input"],
-    div[data-baseweb="select"] > div {
+    .stButton > button, .stDownloadButton > button {
         background-color: #1E293B !important;
         border-color: #334155 !important;
         color: #F8FAFC !important;
@@ -627,6 +628,21 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
         background-color: #059669 !important;
         border-color: #10B981 !important;
         color: #FFFFFF !important;
+    }
+    /* KOTAK INPUT, NUMBER INPUT, TEXT INPUT & SELECTBOX (Termasuk Inner Div & Input) */
+    div[data-baseweb="input"],
+    div[data-baseweb="base-input"],
+    div[data-baseweb="select"] > div,
+    input[type="text"],
+    input[type="number"] {
+        background-color: #1E293B !important;
+        border-color: #334155 !important;
+        color: #F8FAFC !important;
+    }
+    div[data-baseweb="select"] > div > div,
+    div[data-baseweb="base-input"] > input {
+        background-color: transparent !important;
+        color: #F8FAFC !important;
     }
     /* Stepper + / - pada Number Input */
     [data-testid="stNumberInput"] button,
@@ -658,10 +674,12 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
         background-color: #263349 !important;
         color: #6EE7B7 !important;
     }
-    /* Alert Box (st.info, st.success, st.warning, st.error) */
-    [data-testid="stAlert"] {
+    /* Alert Box (st.info, st.success, st.warning, st.error) + Inner Notification Div */
+    [data-testid="stAlert"],
+    [data-testid="stAlert"] > div,
+    div[data-baseweb="notification"] {
         background-color: #1E293B !important;
-        border: 1px solid #334155 !important;
+        border-color: #334155 !important;
         color: #E2E8F0 !important;
     }
     [data-testid="stAlert"] p,
@@ -697,7 +715,6 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
         color: #6EE7B7 !important;
         border: 1px solid rgba(52, 211, 153, 0.45) !important;
     }
-    input[type="text"], input[type="number"],
     div[data-baseweb="select"] span, div[data-baseweb="select"] div,
     .feature-desc, .m-lbl, .m-val, .m-sub, .mat-bar b, .sub-pill span, .sub-pill b,
     .lca-card b, [data-testid="stMetricValue"], [data-testid="stMetricLabel"] p,
